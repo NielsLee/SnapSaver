@@ -1,5 +1,8 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:provider/provider.dart';
+import 'package:snap_saver/viewmodel/home_view_model.dart';
 import 'display_picture_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -42,31 +45,52 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: SizedBox(
-        width: 400,
-        child: Column(
-          children: [
-            AspectRatio(
-                aspectRatio: 3 / 4,
-                child: FutureBuilder<void>(
-                  future: _initializeControllerFuture,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.done) {
-                      // If the Future is complete, display the preview.
-                      return ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: CameraPreview(_controller));
-                    } else {
-                      // Otherwise, display a loading indicator.
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                  },
-                ))
-          ],
-        ),
-      )
+    return Consumer<HomeViewModel>(
+      builder: (BuildContext context, HomeViewModel viewModel, Widget? child) {
+        final itemList = viewModel.savers;
+        return Container(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              width: 400,
+              child: Column(
+                children: [
+                  AspectRatio(
+                      aspectRatio: 3 / 4,
+                      child: FutureBuilder<void>(
+                        future: _initializeControllerFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.done) {
+                            // If the Future is complete, display the preview.
+                            return ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: CameraPreview(_controller));
+                          } else {
+                            // Otherwise, display a loading indicator.
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          }
+                        },
+                      )),
+                  Expanded(
+                      child: MasonryGridView.builder(
+                          itemCount: itemList.length,
+                          scrollDirection: Axis.horizontal,
+                          gridDelegate:
+                              const SliverSimpleGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2),
+                          itemBuilder: (context, index) {
+                            return Container(
+                              margin: EdgeInsets.all(2),
+                              child: ElevatedButton(
+                                  onPressed: () {},
+                                  child: Text(itemList[index])),
+                            );
+                          })),
+                ],
+              ),
+            ));
+      },
     );
   }
 }
