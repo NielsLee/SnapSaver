@@ -2,8 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:snap_saver/InsertButtonDialog.dart';
 import 'package:snap_saver/album_screen.dart';
 import 'package:snap_saver/settings_screen.dart';
+import 'package:snap_saver/viewmodel/dialog_view_model.dart';
 import 'package:snap_saver/viewmodel/home_view_model.dart';
 import 'home_screen.dart';
 
@@ -39,7 +41,25 @@ class MainApp extends StatefulWidget {
 class MainAppState extends State<MainApp> {
   ColorScheme colorScheme = ColorScheme.fromSeed(seedColor: Colors.green);
 
-  // ColorScheme darkScheme = ColorScheme.fromSeed(seedColor: Colors.);
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: ThemeData(colorScheme: colorScheme),
+      darkTheme: ThemeData(colorScheme: colorScheme),
+      home: MainScaffold(),
+    );
+  }
+}
+
+class MainScaffold extends StatefulWidget {
+  const MainScaffold({super.key});
+
+  @override
+  State<StatefulWidget> createState() => MainScaffoldState();
+}
+
+class MainScaffoldState extends State<MainScaffold> {
+  ColorScheme colorScheme = ColorScheme.fromSeed(seedColor: Colors.green);
 
   final List<Widget> _screens = [
     const HomeScreen(),
@@ -51,56 +71,87 @@ class MainAppState extends State<MainApp> {
   @override
   Widget build(BuildContext context) {
     return Consumer<HomeViewModel>(builder: (_, homeViewModel, __) {
-      return MaterialApp(
-        theme: ThemeData(colorScheme: colorScheme),
-        darkTheme: ThemeData(colorScheme: colorScheme),
-        home: Scaffold(
-          appBar: AppBar(
-            title: const Text('Take a picture'),
-            backgroundColor: colorScheme.primaryContainer,
-          ),
-          body: _screens[_selectedIndex],
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              // TODO 添加按钮
-              homeViewModel.addSaver("newSaver");
-            },
-            child: const Icon(Icons.add),
-          ),
-          floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
-          bottomNavigationBar: BottomAppBar(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.home),
-                  onPressed: () {
-                    setState(() {
-                      _selectedIndex = 0;
-                    });
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.photo_album),
-                  onPressed: () {
-                    setState(() {
-                      _selectedIndex = 1;
-                    });
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.settings),
-                  onPressed: () {
-                    setState(() {
-                      _selectedIndex = 2;
-                    });
-                  },
-                ),
-              ],
-            ),
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('SnapSaver'),
+          backgroundColor: colorScheme.primaryContainer,
+        ),
+        body: _screens[_selectedIndex],
+        floatingActionButton: FloatingActionButton(
+          onPressed: () async {
+            await _showMyDialog();
+            homeViewModel.addSaver("newSaver");
+          },
+          child: const Icon(Icons.add),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
+        bottomNavigationBar: BottomAppBar(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.home),
+                onPressed: () {
+                  setState(() {
+                    _selectedIndex = 0;
+                  });
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.photo_album),
+                onPressed: () {
+                  setState(() {
+                    _selectedIndex = 1;
+                  });
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.settings),
+                onPressed: () {
+                  setState(() {
+                    _selectedIndex = 2;
+                  });
+                },
+              ),
+            ],
           ),
         ),
       );
     });
+  }
+
+  Future<DialogViewModel?> _showMyDialog() async {
+    return showGeneralDialog<DialogViewModel>(
+      context: context,
+      barrierDismissible: false,
+      pageBuilder: (BuildContext context, anim1, anmi2) {
+        return InsertButtonDialog();
+      },
+      transitionDuration: const Duration(milliseconds: 150),
+      transitionBuilder: (context, anim1, anim2, child) {
+        const beginScale = 0.0;
+        const endScale = 1.0;
+        const beginOpacity = 0.0;
+        const endOpacity = 1.0;
+
+        final scale = beginScale + (endScale - beginScale) * anim1.value;
+        final opacity =
+            beginOpacity + (endOpacity - beginOpacity) * anim1.value;
+
+        final dx = MediaQuery.of(context).size.width * (1 - scale); // Move left
+        final dy = MediaQuery.of(context).size.height * (1 - scale); // Move up
+
+        return Opacity(
+          opacity: opacity,
+          child: Transform.translate(
+            offset: Offset(dx, dy),
+            child: Transform.scale(
+              scale: scale,
+              child: child,
+            ),
+          ),
+        );
+      },
+    );
   }
 }

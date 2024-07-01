@@ -28,7 +28,7 @@ class HomeScreenState extends State<HomeScreen> {
     WidgetsFlutterBinding.ensureInitialized();
 
     cameras = await availableCameras();
-    _controller = CameraController(cameras[0], ResolutionPreset.ultraHigh);
+    _controller = CameraController(cameras[0], ResolutionPreset.max);
 
     _initializeControllerFuture = _controller.initialize();
     if (mounted) {
@@ -48,48 +48,50 @@ class HomeScreenState extends State<HomeScreen> {
     return Consumer<HomeViewModel>(
       builder: (BuildContext context, HomeViewModel viewModel, Widget? child) {
         final itemList = viewModel.savers;
-        return Container(
-            padding: const EdgeInsets.all(16),
-            child: SizedBox(
-              width: 400,
-              child: Column(
-                children: [
-                  AspectRatio(
-                      aspectRatio: 3 / 4,
-                      child: FutureBuilder<void>(
-                        future: _initializeControllerFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.done) {
-                            // If the Future is complete, display the preview.
-                            return ClipRRect(
-                                borderRadius: BorderRadius.circular(16),
-                                child: CameraPreview(_controller));
-                          } else {
-                            // Otherwise, display a loading indicator.
-                            return const Center(
-                                child: CircularProgressIndicator());
-                          }
-                        },
-                      )),
-                  Expanded(
-                      child: MasonryGridView.builder(
-                          itemCount: itemList.length,
-                          scrollDirection: Axis.horizontal,
-                          gridDelegate:
-                              const SliverSimpleGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2),
-                          itemBuilder: (context, index) {
-                            return Container(
-                              margin: EdgeInsets.all(2),
-                              child: ElevatedButton(
-                                  onPressed: () {},
-                                  child: Text(itemList[index])),
-                            );
-                          })),
-                ],
+        return Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              child: SizedBox(
+                width: 400,
+                child: AspectRatio(
+                    aspectRatio: 3 / 4,
+                    child: FutureBuilder<void>(
+                      future: _initializeControllerFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.done) {
+                          // If the Future is complete, display the preview.
+                          return ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: CameraPreview(_controller));
+                        } else {
+                          // Otherwise, display a loading indicator.
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        }
+                      },
+                    )),
               ),
-            ));
+            ),
+            Expanded(
+                child: MasonryGridView.builder(
+                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 12),
+                    itemCount: itemList.length,
+                    scrollDirection: Axis.horizontal,
+                    gridDelegate:
+                    const SliverSimpleGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2),
+                    itemBuilder: (context, index) {
+                      return Container(
+                        margin: const EdgeInsets.all(4),
+                        child: ElevatedButton(
+                            onPressed: () {},
+                            child: Text(itemList[index])),
+                      );
+                    })),
+          ],
+        );
       },
     );
   }
