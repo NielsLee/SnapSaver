@@ -7,6 +7,8 @@ import 'package:snap_saver/album_screen.dart';
 import 'package:snap_saver/settings_screen.dart';
 import 'package:snap_saver/viewmodel/dialog_view_model.dart';
 import 'package:snap_saver/viewmodel/home_view_model.dart';
+import 'db/SaverDatabase.dart';
+import 'entity/saver.dart';
 import 'home_screen.dart';
 
 Future<void> main() async {
@@ -79,8 +81,15 @@ class MainScaffoldState extends State<MainScaffold> {
         body: _screens[_selectedIndex],
         floatingActionButton: FloatingActionButton(
           onPressed: () async {
-            await _showMyDialog();
-            homeViewModel.addSaver("newSaver");
+            // homeViewModel瑕佷繚璇佸鏋滄甯歌繑鍥炵殑璇濓紝涓€瀹氭槸鏈夊畬鏁寸殑saver淇℃伅鐨?+
+            final dialogViewModel = await _showMyDialog();
+            if (dialogViewModel != null) {
+              final newSaver = Saver(
+                  path: dialogViewModel.getPath(),
+                  name: dialogViewModel.getName());
+              SaverDatabase().insertSaver(newSaver);
+              homeViewModel.addSaver(newSaver);
+            }
           },
           child: const Icon(Icons.add),
         ),

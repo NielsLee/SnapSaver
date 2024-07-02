@@ -1,24 +1,31 @@
 import 'package:flutter/cupertino.dart';
+import 'package:snap_saver/db/SaverDatabase.dart';
+import 'package:snap_saver/entity/saver.dart';
 
 class HomeViewModel extends ChangeNotifier {
-  final List<String> _saverList = [];
+  final List<Saver> _saverList = [];
 
   HomeViewModel() {
-    _saverList.add("value");
-    _saverList.add("dfa");
-    _saverList.add("valu23423e");
-    _saverList.add("阿斯顿发");
+    _initSavers();
   }
 
-  List<String> get savers => _saverList;
+  List<Saver> get savers => _saverList;
 
-  void addSaver(String name) {
-    _saverList.add(name);
+  void addSaver(Saver newSaver) {
+    _saverList.add(newSaver);
+    SaverDatabase().insertSaver(newSaver);
     notifyListeners();
   }
 
-  void removeSaver(String name) {
-    _saverList.remove(name);
+  void removeSaver(Saver saver) {
+    _saverList.remove(saver);
+    SaverDatabase().deleteSaver(saver);
+    notifyListeners();
+  }
+
+  void _initSavers() async {
+    final existedSavers = await SaverDatabase().getAllSavers();
+    _saverList.addAll(existedSavers);
     notifyListeners();
   }
 }

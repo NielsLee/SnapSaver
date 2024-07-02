@@ -1,9 +1,11 @@
+import 'dart:io';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import 'package:snap_saver/viewmodel/home_view_model.dart';
-import 'display_picture_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,6 +18,7 @@ class HomeScreenState extends State<HomeScreen> {
   late List<CameraDescription> cameras;
   late CameraController _controller;
   Future<void>? _initializeControllerFuture;
+  bool isCapturing = false;
 
   @override
   void initState() {
@@ -48,6 +51,7 @@ class HomeScreenState extends State<HomeScreen> {
     return Consumer<HomeViewModel>(
       builder: (BuildContext context, HomeViewModel viewModel, Widget? child) {
         final itemList = viewModel.savers;
+        final saversRowPadding = MediaQuery.of(context).size.width * 0.2;
         return Column(
           children: [
             Container(
@@ -59,12 +63,13 @@ class HomeScreenState extends State<HomeScreen> {
                     child: FutureBuilder<void>(
                       future: _initializeControllerFuture,
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.done) {
+                        if (snapshot.connectionState == ConnectionState.done) {
                           // If the Future is complete, display the preview.
-                          return ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
-                              child: CameraPreview(_controller));
+                          return Visibility(
+                            visible: !isCapturing,
+                              child: ClipRRect(
+                              borderRadius: BorderRadius.circular(18),
+                              child: CameraPreview(_controller)));
                         } else {
                           // Otherwise, display a loading indicator.
                           return const Center(
@@ -76,18 +81,40 @@ class HomeScreenState extends State<HomeScreen> {
             ),
             Expanded(
                 child: MasonryGridView.builder(
-                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 12),
+                    padding: EdgeInsets.fromLTRB(saversRowPadding, 0, saversRowPadding, 12),
                     itemCount: itemList.length,
                     scrollDirection: Axis.horizontal,
                     gridDelegate:
-                    const SliverSimpleGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2),
+                        const SliverSimpleGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2),
                     itemBuilder: (context, index) {
                       return Container(
                         margin: const EdgeInsets.all(4),
                         child: ElevatedButton(
-                            onPressed: () {},
-                            child: Text(itemList[index])),
+                            onPressed: () async {
+                              try {
+
+                                await _initializeControllerFuture;
+
+                                setState(() {
+                                  isCapturing = true;
+                                });
+
+                                final image = await _controller.takePicture();
+
+                                setState(() {
+                                  isCapturing = false;
+                                });
+
+                                await moveXFileToFile(image, itemList[index].path);
+
+                                if (!context.mounted) return;
+
+                              } catch (e) {
+                                print(e);
+                              }
+                            },
+                            child: Text(itemList[index].name)),
                       );
                     })),
           ],
@@ -97,28 +124,18 @@ class HomeScreenState extends State<HomeScreen> {
   }
 }
 
-Future<void> takeSnap(Future<void> initializeControllerFuture,
-    CameraController controller, BuildContext context) async {
+Future<void> moveXFileToFile(XFile xFile, String destinationPath) async {
   try {
-    // Ensure that the camera is initialized.
-    await initializeControllerFuture;
+    File sourceFile = File(xFile.path);
+    final sourceFileName = basename(sourceFile.path);
+    File destinationFile = File('$destinationPath/$sourceFileName');
 
-    // Attempt to take a picture and get the file `image`
-    // where it was saved.
-    final image = await controller.takePicture();
+    await sourceFile.copy(destinationFile.path);
 
-    if (!context.mounted) return;
+    await sourceFile.delete();
 
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => DisplayPictureScreen(
-          // Pass the automatically generated path to
-          // the DisplayPictureScreen widget.
-          imagePath: image.path,
-        ),
-      ),
-    );
+    print('File moved to: ${destinationFile.path}');
   } catch (e) {
-    print(e);
+    print('Error moving file: $e');
   }
 }
