@@ -44,10 +44,24 @@ dependencies:
   provider: ^6.1.2
   file_picker: ^8.0.5
   sqflite: ^2.3.3+1
+  shared_preferences: ^2.2.3
+  audioplayers: ^6.0.0
+  url_launcher: ^6.3.0
+  flutter_localization: ^0.2.0
+  flutter_launcher_icons: ^0.13.1
+  intl: any
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icons/snapsaver_icon.png"
+
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -61,6 +75,11 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  assets:
+    - assets/sounds/camera_shutter.mp3
+    - assets/icons/github_mark.png
+    - assets/icons/snapsaver_icon.svg
+  generate: true
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

@@ -1,0 +1,15 @@
+{
+    "appTitle": "SnapSaver",
+    "howToUse": "How to use?",
+    "helpContent": "First, click the button in the lower right corner, enter the path and name to save the photo, and create a photo shooting button; then, click the created button to take a photo and save it to the path corresponding to the button.\nNotice: In some devices, newly created path need a reboot to be recognized by album app.",
+    "createANewSaver": "Create a new Saver",
+    "path": "Photo save path",
+    "selectPath": "Select save path",
+    "name": "Button name",
+    "ok": "OK",
+    "cancel": "Cancel",
+    "importAllExistingAlbums": "Import all existing albums",
+    "contactDeveloper": "Contact developer",
+    "browseSourceCode": "Browse source code",
+    "notYetImplemented": "Not yet implemented"
+}

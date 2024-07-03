@@ -1,10 +1,11 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import 'package:snap_saver/viewmodel/dialog_view_model.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-import 'file/android_native_path_picker.dart';
+
+import '../file/android_native_path_picker.dart';
 
 class InsertButtonDialog extends StatefulWidget {
   const InsertButtonDialog({super.key});
@@ -24,7 +25,7 @@ class InsertButtonDialogState extends State<InsertButtonDialog> {
             final pathController = TextEditingController();
 
             return AlertDialog(
-              title: const Text('Create A New Saver'),
+              title: Text(AppLocalizations.of(context)!.createANewSaver),
               content: SingleChildScrollView(
                 child: ListBody(
                   children: <Widget>[
@@ -35,9 +36,8 @@ class InsertButtonDialogState extends State<InsertButtonDialog> {
                           controller: pathController,
                           readOnly: true,
                           decoration: InputDecoration(
-                              label: Text("Path"),
-                              hintText: "Input Path",
-                              border: OutlineInputBorder(
+                              label: Text(AppLocalizations.of(context)!.selectPath),
+                              border: const OutlineInputBorder(
                                   borderRadius:
                                       BorderRadius.all(Radius.circular(18)))),
                         )),
@@ -63,9 +63,8 @@ class InsertButtonDialogState extends State<InsertButtonDialog> {
                             child: TextField(
                           controller: nameController,
                           decoration: InputDecoration(
-                              label: Text("Name"),
-                              hintText: "Input Saver Name",
-                              border: OutlineInputBorder(
+                              label: Text(AppLocalizations.of(context)!.name),
+                              border: const OutlineInputBorder(
                                   borderRadius:
                                       BorderRadius.all(Radius.circular(18)))),
                         ))
@@ -76,18 +75,17 @@ class InsertButtonDialogState extends State<InsertButtonDialog> {
               ),
               actions: <Widget>[
                 TextButton(
-                  child: const Text('Cancel'),
+                  child: Text(AppLocalizations.of(context)!.cancel),
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
                 ),
                 TextButton(
-                  child: const Text('Approve'),
+                  child: Text(AppLocalizations.of(context)!.ok),
                   onPressed: () {
                     final inputName = nameController.text;
                     final inputPath = pathController.text;
                     if (inputName.isEmpty || inputPath.isEmpty) {
-                      // 娌℃湁姝ｅ父鍒涘缓
                     } else {
                       dialogViewModel.setName(inputName);
                       dialogViewModel.setPath(inputPath);

@@ -1,5 +1,7 @@
+import 'dart:developer';
 import 'dart:io';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -41,7 +43,6 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    // Dispose of the controller when the widget is disposed.
     _controller.dispose();
     super.dispose();
   }
@@ -63,13 +64,12 @@ class HomeScreenState extends State<HomeScreen> {
                     child: FutureBuilder<void>(
                       future: _initializeControllerFuture,
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.done) {
+                        if (snapshot.connectionState == ConnectionState.done
+                        && !isCapturing) {
                           // If the Future is complete, display the preview.
-                          return Visibility(
-                            visible: !isCapturing,
-                              child: ClipRRect(
+                          return ClipRRect(
                               borderRadius: BorderRadius.circular(18),
-                              child: CameraPreview(_controller)));
+                              child: CameraPreview(_controller));
                         } else {
                           // Otherwise, display a loading indicator.
                           return const Center(
@@ -93,13 +93,13 @@ class HomeScreenState extends State<HomeScreen> {
                         child: ElevatedButton(
                             onPressed: () async {
                               try {
-
                                 await _initializeControllerFuture;
 
                                 setState(() {
                                   isCapturing = true;
                                 });
 
+                                await AudioPlayer().play(AssetSource('sounds/camera_shutter.mp3'));
                                 final image = await _controller.takePicture();
 
                                 setState(() {
@@ -111,7 +111,7 @@ class HomeScreenState extends State<HomeScreen> {
                                 if (!context.mounted) return;
 
                               } catch (e) {
-                                print(e);
+                                log(e.toString());
                               }
                             },
                             child: Text(itemList[index].name)),
@@ -134,8 +134,8 @@ Future<void> moveXFileToFile(XFile xFile, String destinationPath) async {
 
     await sourceFile.delete();
 
-    print('File moved to: ${destinationFile.path}');
+    log('File moved to: ${destinationFile.path}');
   } catch (e) {
-    print('Error moving file: $e');
+    log('Error moving file: $e');
   }
 }

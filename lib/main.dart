@@ -2,18 +2,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:snap_saver/InsertButtonDialog.dart';
-import 'package:snap_saver/album_screen.dart';
+import 'package:snap_saver/dialog/help_dialog.dart';
+import 'package:snap_saver/dialog/insert_button_dialog.dart';
 import 'package:snap_saver/settings_screen.dart';
 import 'package:snap_saver/viewmodel/dialog_view_model.dart';
 import 'package:snap_saver/viewmodel/home_view_model.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'db/SaverDatabase.dart';
 import 'entity/saver.dart';
 import 'home_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // 设置导航栏透明和边到边
   SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(systemNavigationBarColor: Colors.transparent));
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -26,11 +26,6 @@ Future<void> main() async {
       child: const MainApp(),
     ),
   );
-  // runApp(const MainApp());
-  // SystemChrome.setPreferredOrientations([
-  //   DeviceOrientation.portraitUp,
-  //   DeviceOrientation.portraitDown,
-  // ]);
 }
 
 class MainApp extends StatefulWidget {
@@ -46,9 +41,11 @@ class MainAppState extends State<MainApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: ThemeData(colorScheme: colorScheme),
       darkTheme: ThemeData(colorScheme: colorScheme),
-      home: MainScaffold(),
+      home: const MainScaffold(),
     );
   }
 }
@@ -65,7 +62,6 @@ class MainScaffoldState extends State<MainScaffold> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const AlbumScreen(),
     const SettingsScreen(),
   ];
   int _selectedIndex = 0;
@@ -75,14 +71,21 @@ class MainScaffoldState extends State<MainScaffold> {
     return Consumer<HomeViewModel>(builder: (_, homeViewModel, __) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('SnapSaver'),
+          title: Text(AppLocalizations.of(context)!.appTitle),
           backgroundColor: colorScheme.primaryContainer,
+          actions: [
+            IconButton(
+                onPressed: () {
+                  _showHelpDialog();
+                },
+                icon: Icon(Icons.help_outline)),
+            Padding(padding: EdgeInsets.fromLTRB(0, 0, 8, 0))
+          ],
         ),
         body: _screens[_selectedIndex],
         floatingActionButton: FloatingActionButton(
           onPressed: () async {
-            // homeViewModel瑕佷繚璇佸鏋滄甯歌繑鍥炵殑璇濓紝涓€瀹氭槸鏈夊畬鏁寸殑saver淇℃伅鐨?+
-            final dialogViewModel = await _showMyDialog();
+            final dialogViewModel = await _showInsertDialog();
             if (dialogViewModel != null) {
               final newSaver = Saver(
                   path: dialogViewModel.getPath(),
@@ -93,7 +96,7 @@ class MainScaffoldState extends State<MainScaffold> {
           },
           child: const Icon(Icons.add),
         ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
+        floatingActionButtonLocation: FloatingActionButtonLocation.endContained,
         bottomNavigationBar: BottomAppBar(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.start,
@@ -107,18 +110,10 @@ class MainScaffoldState extends State<MainScaffold> {
                 },
               ),
               IconButton(
-                icon: const Icon(Icons.photo_album),
-                onPressed: () {
-                  setState(() {
-                    _selectedIndex = 1;
-                  });
-                },
-              ),
-              IconButton(
                 icon: const Icon(Icons.settings),
                 onPressed: () {
                   setState(() {
-                    _selectedIndex = 2;
+                    _selectedIndex = 1;
                   });
                 },
               ),
@@ -129,12 +124,12 @@ class MainScaffoldState extends State<MainScaffold> {
     });
   }
 
-  Future<DialogViewModel?> _showMyDialog() async {
+  Future<DialogViewModel?> _showInsertDialog() async {
     return showGeneralDialog<DialogViewModel>(
       context: context,
       barrierDismissible: false,
       pageBuilder: (BuildContext context, anim1, anmi2) {
-        return InsertButtonDialog();
+        return const InsertButtonDialog();
       },
       transitionDuration: const Duration(milliseconds: 150),
       transitionBuilder: (context, anim1, anim2, child) {
@@ -149,6 +144,42 @@ class MainScaffoldState extends State<MainScaffold> {
 
         final dx = MediaQuery.of(context).size.width * (1 - scale); // Move left
         final dy = MediaQuery.of(context).size.height * (1 - scale); // Move up
+
+        return Opacity(
+          opacity: opacity,
+          child: Transform.translate(
+            offset: Offset(dx, dy),
+            child: Transform.scale(
+              scale: scale,
+              child: child,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showHelpDialog() async {
+    return showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "Help Dialog",
+      pageBuilder: (BuildContext context, anim1, anmi2) {
+        return HelpDialog();
+      },
+      transitionDuration: const Duration(milliseconds: 150),
+      transitionBuilder: (context, anim1, anim2, child) {
+        const beginScale = 0.0;
+        const endScale = 1.0;
+        const beginOpacity = 0.0;
+        const endOpacity = 1.0;
+
+        final scale = beginScale + (endScale - beginScale) * anim1.value;
+        final opacity =
+            beginOpacity + (endOpacity - beginOpacity) * anim1.value;
+
+        final dx = MediaQuery.of(context).size.width * (1 - scale); // Move left
+        final dy = MediaQuery.of(context).size.height * (scale - 1); // Down
 
         return Opacity(
           opacity: opacity,
