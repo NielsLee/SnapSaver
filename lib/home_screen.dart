@@ -33,7 +33,7 @@ class HomeScreenState extends State<HomeScreen> {
     WidgetsFlutterBinding.ensureInitialized();
 
     cameras = await availableCameras();
-    _controller = CameraController(cameras[0], ResolutionPreset.max);
+    _controller = CameraController(cameras[0], ResolutionPreset.max, enableAudio: false);
 
     _initializeControllerFuture = _controller.initialize();
     if (mounted) {
