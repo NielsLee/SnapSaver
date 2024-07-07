@@ -2,6 +2,13 @@
 
 A camera app that makes it easier to take photos for selected albums or directories.
 
+<div>
+  <img src="https://github.com/NielsLee/SnapSaver/blob/main/metadata/en-US/images/phoneScreenshots/1.png" alt="2" width="250">
+  <img src="https://github.com/NielsLee/SnapSaver/blob/main/metadata/en-US/images/phoneScreenshots/2.png" alt="2" width="250">
+  <img src="https://github.com/NielsLee/SnapSaver/blob/main/metadata/en-US/images/phoneScreenshots/3.png" alt="3" width="250">
+</div>
+
+
 ## Getting Started
 
 1. Launch the app and grant camera permission.
@@ -15,6 +22,12 @@ A camera app that makes it easier to take photos for selected albums or director
 # 快存相机
 
 一款相机应用程序，可以更轻松地将照片拍摄到选定的相册或目录。
+
+<div>
+  <img src="https://github.com/NielsLee/SnapSaver/blob/main/metadata/zh-CN/images/phoneScreenshots/1.png" alt="2" width="250">
+  <img src="https://github.com/NielsLee/SnapSaver/blob/main/metadata/zh-CN/images/phoneScreenshots/2.png" alt="2" width="250">
+  <img src="https://github.com/NielsLee/SnapSaver/blob/main/metadata/zh-CN/images/phoneScreenshots/3.png" alt="3" width="250">
+</div>
 
 ## 入门指南
 
