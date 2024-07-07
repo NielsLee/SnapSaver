@@ -1,0 +1,1 @@
+You can use this app to create a Saver button and set a storage directory for photos; later, just press the Saver button to take a photo and store it in the pre-set storage directory.
