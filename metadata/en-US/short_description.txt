@@ -1,1 +1,1 @@
-An application that can help you quickly take photos and organize them into specified directories
+An app to quickly take photos and organize them into specified directories.
