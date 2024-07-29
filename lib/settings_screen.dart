@@ -35,7 +35,7 @@ class SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
         ),
-        Divider(),
+        Divider(height: 0),
         Container(
           padding: const EdgeInsets.all(8),
           child: Row(
@@ -51,7 +51,7 @@ class SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
         ),
-        Divider(),
+        Divider(height: 0),
         Container(
           padding: const EdgeInsets.all(8),
           child: Row(

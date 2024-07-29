@@ -18,6 +18,7 @@ class HomeScreen extends StatefulWidget {
 
 class HomeScreenState extends State<HomeScreen> {
   late List<CameraDescription> cameras;
+  late int selectedCamera = 0;
   late CameraController _controller;
   Future<void>? _initializeControllerFuture;
   bool isCapturing = false;
@@ -33,7 +34,7 @@ class HomeScreenState extends State<HomeScreen> {
     WidgetsFlutterBinding.ensureInitialized();
 
     cameras = await availableCameras();
-    _controller = CameraController(cameras[0], ResolutionPreset.max, enableAudio: false);
+    _controller = CameraController(cameras[selectedCamera], ResolutionPreset.max, enableAudio: false);
 
     _initializeControllerFuture = _controller.initialize();
     if (mounted) {
@@ -58,30 +59,58 @@ class HomeScreenState extends State<HomeScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               child: SizedBox(
-                width: 400,
-                child: AspectRatio(
-                    aspectRatio: 3 / 4,
-                    child: FutureBuilder<void>(
-                      future: _initializeControllerFuture,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.done
-                        && !isCapturing) {
-                          // If the Future is complete, display the preview.
-                          return ClipRRect(
-                              borderRadius: BorderRadius.circular(18),
-                              child: CameraPreview(_controller));
-                        } else {
-                          // Otherwise, display a loading indicator.
-                          return const Center(
-                              child: CircularProgressIndicator());
-                        }
-                      },
-                    )),
-              ),
+                  width: 400,
+                  child: AspectRatio(
+                      aspectRatio: 3 / 4,
+                      child: FutureBuilder<void>(
+                        future: _initializeControllerFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                                  ConnectionState.done &&
+                              !isCapturing) {
+                            return Stack(
+                                alignment: AlignmentDirectional.bottomCenter,
+                                children: <Widget>[
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(18),
+                                    child: Stack(children: <Widget>[
+                                      CameraPreview(_controller),
+                                    ]),
+                                  ),
+                                  DropdownButton<int>(
+                                    value: selectedCamera,
+                                    onChanged: (int? newCamera) {
+                                      if (newCamera == null || newCamera == selectedCamera) return;
+                                      selectedCamera = newCamera;
+                                      setState(() {
+                                        _controller = CameraController(cameras[selectedCamera], ResolutionPreset.max, enableAudio: false);
+                                        _initializeControllerFuture = _controller.initialize();
+                                      });
+                                    },
+                                    underline: Divider(
+                                        height: 0, color: Colors.transparent),
+                                    items: List.generate(cameras.length,
+                                        (cameraIndex) {
+                                      return DropdownMenuItem(
+                                          value: cameraIndex,
+                                          child:
+                                              Text(cameras[cameraIndex].name));
+                                    }),
+                                    icon: Container(padding: EdgeInsets.all(8), child: Icon(Icons.cameraswitch),),
+                                  ),
+                                ]);
+                          } else {
+                            // Otherwise, display a loading indicator.
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          }
+                        },
+                      ))),
             ),
             Expanded(
                 child: MasonryGridView.builder(
-                    padding: EdgeInsets.fromLTRB(saversRowPadding, 0, saversRowPadding, 12),
+                    padding: EdgeInsets.fromLTRB(
+                        saversRowPadding, 0, saversRowPadding, 12),
                     itemCount: itemList.length,
                     scrollDirection: Axis.horizontal,
                     gridDelegate:
@@ -99,17 +128,18 @@ class HomeScreenState extends State<HomeScreen> {
                                   isCapturing = true;
                                 });
 
-                                await AudioPlayer().play(AssetSource('sounds/camera_shutter.mp3'));
+                                await AudioPlayer().play(
+                                    AssetSource('sounds/camera_shutter.mp3'));
                                 final image = await _controller.takePicture();
 
                                 setState(() {
                                   isCapturing = false;
                                 });
 
-                                await moveXFileToFile(image, itemList[index].path);
+                                await moveXFileToFile(
+                                    image, itemList[index].path);
 
                                 if (!context.mounted) return;
-
                               } catch (e) {
                                 log(e.toString());
                               }
