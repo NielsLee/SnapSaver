@@ -8,6 +8,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import 'package:snap_saver/viewmodel/home_view_model.dart';
+import 'package:vibration/vibration.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -83,6 +84,7 @@ class HomeScreenState extends State<HomeScreen> {
                                       if (newCamera == null || newCamera == selectedCamera) return;
                                       selectedCamera = newCamera;
                                       setState(() {
+                                        Vibration.vibrate(amplitude: 255, duration: 5);
                                         _controller = CameraController(cameras[selectedCamera], ResolutionPreset.max, enableAudio: false);
                                         _initializeControllerFuture = _controller.initialize();
                                       });
@@ -128,6 +130,7 @@ class HomeScreenState extends State<HomeScreen> {
                                   isCapturing = true;
                                 });
 
+                                await Vibration.vibrate(amplitude: 255, duration: 5);
                                 await AudioPlayer().play(
                                     AssetSource('sounds/camera_shutter.mp3'));
                                 final image = await _controller.takePicture();

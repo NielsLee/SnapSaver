@@ -8,6 +8,7 @@ import 'package:snap_saver/settings_screen.dart';
 import 'package:snap_saver/viewmodel/dialog_view_model.dart';
 import 'package:snap_saver/viewmodel/home_view_model.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:vibration/vibration.dart';
 import 'db/SaverDatabase.dart';
 import 'entity/saver.dart';
 import 'home_screen.dart';
@@ -76,6 +77,7 @@ class MainScaffoldState extends State<MainScaffold> {
           actions: [
             IconButton(
                 onPressed: () {
+                  Vibration.vibrate(amplitude: 255, duration: 5);
                   _showHelpDialog();
                 },
                 icon: Icon(Icons.help_outline)),
@@ -104,6 +106,7 @@ class MainScaffoldState extends State<MainScaffold> {
               IconButton(
                 icon: const Icon(Icons.home),
                 onPressed: () {
+                  Vibration.vibrate(amplitude: 255, duration: 5);
                   setState(() {
                     _selectedIndex = 0;
                   });
@@ -112,6 +115,7 @@ class MainScaffoldState extends State<MainScaffold> {
               IconButton(
                 icon: const Icon(Icons.settings),
                 onPressed: () {
+                  Vibration.vibrate(amplitude: 255, duration: 5);
                   setState(() {
                     _selectedIndex = 1;
                   });
@@ -125,6 +129,7 @@ class MainScaffoldState extends State<MainScaffold> {
   }
 
   Future<DialogViewModel?> _showInsertDialog() async {
+    Vibration.vibrate(amplitude: 255, duration: 5);
     return showGeneralDialog<DialogViewModel>(
       context: context,
       barrierDismissible: false,
