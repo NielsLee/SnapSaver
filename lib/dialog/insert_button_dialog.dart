@@ -3,6 +3,7 @@ import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import 'package:snap_saver/viewmodel/dialog_view_model.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:vibration/vibration.dart';
 
 
 import '../file/android_native_path_picker.dart';
@@ -77,12 +78,14 @@ class InsertButtonDialogState extends State<InsertButtonDialog> {
                 TextButton(
                   child: Text(AppLocalizations.of(context)!.cancel),
                   onPressed: () {
+                    Vibration.vibrate(amplitude: 255, duration: 5);
                     Navigator.of(context).pop();
                   },
                 ),
                 TextButton(
                   child: Text(AppLocalizations.of(context)!.ok),
                   onPressed: () {
+                    Vibration.vibrate(amplitude: 255, duration: 5);
                     final inputName = nameController.text;
                     final inputPath = pathController.text;
                     if (inputName.isEmpty || inputPath.isEmpty) {

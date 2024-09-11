@@ -11,5 +11,6 @@
     "importAllExistingAlbums": "导入全部已有相册",
     "contactDeveloper": "联系开发者",
     "browseSourceCode": "浏览源码",
-    "notYetImplemented": "尚未实现"
+    "notYetImplemented": "尚未实现",
+    "saverPathExisted": "❌已经存在这个路径的拍照键了"
 }

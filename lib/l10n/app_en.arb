@@ -11,5 +11,6 @@
     "importAllExistingAlbums": "Import all existing albums",
     "contactDeveloper": "Contact developer",
     "browseSourceCode": "Browse source code",
-    "notYetImplemented": "Not yet implemented"
+    "notYetImplemented": "Not yet implemented",
+    "saverPathExisted": "❌Saver with this path already existed"
 }

@@ -93,7 +93,14 @@ class MainScaffoldState extends State<MainScaffold> {
                   path: dialogViewModel.getPath(),
                   name: dialogViewModel.getName());
               SaverDatabase().insertSaver(newSaver);
-              homeViewModel.addSaver(newSaver);
+              int res = homeViewModel.addSaver(newSaver, context);
+              if (res == 0) {
+                final snackBar = SnackBar(
+                  content:
+                  Text(AppLocalizations.of(context)!.saverPathExisted),
+                );
+                ScaffoldMessenger.of(context).showSnackBar(snackBar);
+              }
             }
           },
           child: const Icon(Icons.add),

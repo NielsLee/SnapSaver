@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:snap_saver/db/SaverDatabase.dart';
 import 'package:snap_saver/entity/saver.dart';
 
@@ -11,10 +12,14 @@ class HomeViewModel extends ChangeNotifier {
 
   List<Saver> get savers => _saverList;
 
-  void addSaver(Saver newSaver) {
+  int addSaver(Saver newSaver, BuildContext context) {
+    if (_saverList.map((e) => e.name).contains(newSaver.name)) {
+      return 0;
+    }
     _saverList.add(newSaver);
     SaverDatabase().insertSaver(newSaver);
     notifyListeners();
+    return 1;
   }
 
   void removeSaver(Saver saver) {

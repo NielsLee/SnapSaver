@@ -17,10 +17,10 @@ class SaverDatabase {
     return _database;
   }
 
-  Future<void> insertSaver(Saver saver) async {
+  Future<int> insertSaver(Saver saver) async {
     final db = await database;
 
-    db.insert(Constants.tableName, saver.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+    return db.insert(Constants.tableName, saver.toMap(), conflictAlgorithm: ConflictAlgorithm.rollback);
   }
 
   Future<void> deleteSaver(Saver saver) async {
