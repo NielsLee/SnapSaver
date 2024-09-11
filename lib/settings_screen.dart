@@ -16,25 +16,6 @@ class SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return ListView(
       children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          child: Row(
-            children: [
-              Padding(padding: EdgeInsets.fromLTRB(16, 0, 0, 0)),
-              Text(AppLocalizations.of(context)!.importAllExistingAlbums, style: TextStyle(fontWeight: FontWeight.bold)),
-              const Spacer(),
-              IconButton(
-                  onPressed: () {
-                    final snackBar = SnackBar(
-                      content:
-                          Text(AppLocalizations.of(context)!.notYetImplemented),
-                    );
-                    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                  },
-                  icon: const Icon(Icons.photo_album))
-            ],
-          ),
-        ),
         Divider(height: 0),
         Container(
           padding: const EdgeInsets.all(8),
