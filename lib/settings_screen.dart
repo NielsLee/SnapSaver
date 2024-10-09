@@ -22,13 +22,12 @@ class SettingsScreenState extends State<SettingsScreen> {
           child: Row(
             children: [
               Padding(padding: EdgeInsets.fromLTRB(16, 0, 0, 0)),
-              Text(AppLocalizations.of(context)!.contactDeveloper, style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(AppLocalizations.of(context)!.contactDeveloper,
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               const Spacer(),
               IconButton(
-                  onPressed: () {
-                    _launchMail();
-                  },
-                  icon: const Icon(Icons.mail))
+                  onPressed: _showThanks, icon: const Icon(Icons.thumb_up)),
+              IconButton(onPressed: _launchMail, icon: const Icon(Icons.mail))
             ],
           ),
         ),
@@ -38,7 +37,8 @@ class SettingsScreenState extends State<SettingsScreen> {
           child: Row(
             children: [
               Padding(padding: EdgeInsets.fromLTRB(16, 0, 0, 0)),
-              Text(AppLocalizations.of(context)!.browseSourceCode, style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(AppLocalizations.of(context)!.browseSourceCode,
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               const Spacer(),
               IconButton(
                   onPressed: () {
@@ -53,6 +53,15 @@ class SettingsScreenState extends State<SettingsScreen> {
         ),
         Divider()
       ],
+    );
+  }
+
+  void _showThanks() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppLocalizations.of(context)!.thankForCharlie),
+        duration: Duration(seconds: 2),
+      ),
     );
   }
 

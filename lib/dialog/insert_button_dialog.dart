@@ -24,6 +24,8 @@ class InsertButtonDialogState extends State<InsertButtonDialog> {
 
   // Indicates whether user has manually input path
   bool hasManuallyInputPath = false;
+  // Color of the Saver button
+  Color? saverColor = null;
 
   @override
   Widget build(BuildContext context) {
@@ -32,27 +34,26 @@ class InsertButtonDialogState extends State<InsertButtonDialog> {
         child: Consumer<DialogViewModel>(
           builder: (_, dialogViewModel, __) {
             return AlertDialog(
+              contentPadding: EdgeInsets.fromLTRB(16, 20, 16, 0),
               title: Text(AppLocalizations.of(context)!.createANewSaver),
               content: SingleChildScrollView(
                 child: ListBody(
                   children: <Widget>[
-                    Row(
-                      children: [
-                        Expanded(
-                            child: TextField(
-                          controller: nameController,
-                          onTap: () {
-                            hasManuallyInputPath = true;
-                          },
-                          decoration: InputDecoration(
-                              label: Text(AppLocalizations.of(context)!.name),
-                              border: const OutlineInputBorder(
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(12)))),
-                        ))
-                      ],
+                    // Text field for input name of new saver
+                    TextField(
+                      controller: nameController,
+                      onTap: () {
+                        hasManuallyInputPath = true;
+                      },
+                      decoration: InputDecoration(
+                          label: Text(AppLocalizations.of(context)!.name),
+                          border: const OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(12)))),
                     ),
+
                     Padding(padding: EdgeInsets.all(8)),
+
                     // Columns for path select
                     Column(
                         children: pathSelectors.asMap().entries.map((entry) {
@@ -83,6 +84,8 @@ class InsertButtonDialogState extends State<InsertButtonDialog> {
                                           pathSelector.path = path;
                                           pathSelector.isPathSelected = true;
                                         });
+                                        // add selected path to viewmodel
+                                        dialogViewModel.addPath(path);
                                       }
                                     });
                                   },
@@ -141,7 +144,72 @@ class InsertButtonDialogState extends State<InsertButtonDialog> {
                                   icon: Icon(Icons.remove)))
                         ],
                       );
-                    }).toList())
+                    }).toList()),
+
+                    // Row for select saver color
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          IconButton(
+                              onPressed: () {
+                                saverColor = Colors.red;
+                              },
+                              icon: Icon(
+                                Icons.folder,
+                                color: Colors.red,
+                              )),
+                          IconButton(
+                              onPressed: () {
+                                saverColor = Colors.orange;
+                              },
+                              icon: Icon(
+                                Icons.folder,
+                                color: Colors.orange,
+                              )),
+                          IconButton(
+                              onPressed: () {
+                                saverColor = Colors.yellow;
+                              },
+                              icon: Icon(
+                                Icons.folder,
+                                color: Colors.yellow,
+                              )),
+                          IconButton(
+                              onPressed: () {
+                                saverColor = Colors.green;
+                              },
+                              icon: Icon(
+                                Icons.folder,
+                                color: Colors.green,
+                              )),
+                          IconButton(
+                              onPressed: () {
+                                saverColor = Colors.cyan;
+                              },
+                              icon: Icon(
+                                Icons.folder,
+                                color: Colors.cyan,
+                              )),
+                          IconButton(
+                              onPressed: () {
+                                saverColor = Colors.blue;
+                              },
+                              icon: Icon(
+                                Icons.folder,
+                                color: Colors.blue,
+                              )),
+                          IconButton(
+                              onPressed: () {
+                                saverColor = Colors.purple;
+                              },
+                              icon: Icon(
+                                Icons.folder,
+                                color: Colors.purple,
+                              )),
+                        ],
+                      ),
+                    )
                   ],
                 ),
               ),
@@ -171,10 +239,10 @@ class InsertButtonDialogState extends State<InsertButtonDialog> {
 
                     print("name:$inputName, path: $inputPath");
                     if (inputName.isEmpty || avaliablePaths.isEmpty) {
-                      // do nothing
+                      // no name or no path, do nothing
                     } else {
                       dialogViewModel.setName(inputName);
-                      dialogViewModel.setPath(inputPath);
+                      dialogViewModel.setColor(saverColor);
                       Navigator.of(context).pop(dialogViewModel);
                     }
                   },

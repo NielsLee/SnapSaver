@@ -19,6 +19,13 @@ Future<void> main() async {
       const SystemUiOverlayStyle(systemNavigationBarColor: Colors.transparent));
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
+  // Only support protrait layout now
+  // TODO: support landscape layout
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
   runApp(
     MultiProvider(
       providers: [
@@ -90,14 +97,13 @@ class MainScaffoldState extends State<MainScaffold> {
             final dialogViewModel = await _showInsertDialog();
             if (dialogViewModel != null) {
               final newSaver = Saver(
-                  path: dialogViewModel.getPath(),
-                  name: dialogViewModel.getName());
-              SaverDatabase().insertSaver(newSaver);
+                  paths: dialogViewModel.getPath(),
+                  name: dialogViewModel.getName(),
+                  color: dialogViewModel.getColor()?.value);
               int res = homeViewModel.addSaver(newSaver, context);
               if (res == 0) {
                 final snackBar = SnackBar(
-                  content:
-                  Text(AppLocalizations.of(context)!.saverPathExisted),
+                  content: Text(AppLocalizations.of(context)!.saverPathExisted),
                 );
                 ScaffoldMessenger.of(context).showSnackBar(snackBar);
               }

@@ -35,7 +35,9 @@ class HomeScreenState extends State<HomeScreen> {
     WidgetsFlutterBinding.ensureInitialized();
 
     cameras = await availableCameras();
-    _controller = CameraController(cameras[selectedCamera], ResolutionPreset.max, enableAudio: false);
+    _controller = CameraController(
+        cameras[selectedCamera], ResolutionPreset.max,
+        enableAudio: false);
 
     _initializeControllerFuture = _controller.initialize();
     if (mounted) {
@@ -74,19 +76,23 @@ class HomeScreenState extends State<HomeScreen> {
                                 children: <Widget>[
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(18),
-                                    child: Stack(children: <Widget>[
-                                      CameraPreview(_controller),
-                                    ]),
+                                    child: CameraPreview(_controller),
                                   ),
                                   DropdownButton<int>(
                                     value: selectedCamera,
                                     onChanged: (int? newCamera) {
-                                      if (newCamera == null || newCamera == selectedCamera) return;
+                                      if (newCamera == null ||
+                                          newCamera == selectedCamera) return;
                                       selectedCamera = newCamera;
                                       setState(() {
-                                        Vibration.vibrate(amplitude: 255, duration: 5);
-                                        _controller = CameraController(cameras[selectedCamera], ResolutionPreset.max, enableAudio: false);
-                                        _initializeControllerFuture = _controller.initialize();
+                                        Vibration.vibrate(
+                                            amplitude: 255, duration: 5);
+                                        _controller = CameraController(
+                                            cameras[selectedCamera],
+                                            ResolutionPreset.max,
+                                            enableAudio: false);
+                                        _initializeControllerFuture =
+                                            _controller.initialize();
                                       });
                                     },
                                     underline: Divider(
@@ -98,7 +104,10 @@ class HomeScreenState extends State<HomeScreen> {
                                           child:
                                               Text(cameras[cameraIndex].name));
                                     }),
-                                    icon: Container(padding: EdgeInsets.all(8), child: Icon(Icons.cameraswitch),),
+                                    icon: Container(
+                                      padding: EdgeInsets.all(8),
+                                      child: Icon(Icons.cameraswitch),
+                                    ),
                                   ),
                                 ]);
                           } else {
@@ -119,35 +128,52 @@ class HomeScreenState extends State<HomeScreen> {
                         const SliverSimpleGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2),
                     itemBuilder: (context, index) {
+                      // TODO: get global color scheme from one place
+                      ColorScheme saverColorScheme =
+                          ColorScheme.fromSeed(seedColor: Colors.green);
+
+                      // generate Saver color scheme
+                      if (itemList[index].color != null) {
+                        saverColorScheme = ColorScheme.fromSeed(
+                            seedColor: Color(itemList[index].color!));
+                      }
+
                       return Container(
                         margin: const EdgeInsets.all(4),
                         child: ElevatedButton(
-                            onPressed: () async {
-                              try {
-                                await _initializeControllerFuture;
+                          onPressed: () async {
+                            try {
+                              await _initializeControllerFuture;
 
-                                setState(() {
-                                  isCapturing = true;
-                                });
+                              setState(() {
+                                isCapturing = true;
+                              });
 
-                                await Vibration.vibrate(amplitude: 255, duration: 5);
-                                await AudioPlayer().play(
-                                    AssetSource('sounds/camera_shutter.mp3'));
-                                final image = await _controller.takePicture();
+                              await Vibration.vibrate(
+                                  amplitude: 255, duration: 5);
+                              await AudioPlayer().play(
+                                  AssetSource('sounds/camera_shutter.mp3'));
+                              final image = await _controller.takePicture();
 
-                                setState(() {
-                                  isCapturing = false;
-                                });
+                              setState(() {
+                                isCapturing = false;
+                              });
 
-                                await moveXFileToFile(
-                                    image, itemList[index].path);
+                              // TODO add a progress animate in Saver button
+                              final paths = itemList[index].paths;
+                              await moveXFileToFile(image, paths);
 
-                                if (!context.mounted) return;
-                              } catch (e) {
-                                log(e.toString());
-                              }
-                            },
-                            child: Text(itemList[index].name)),
+                              if (!context.mounted) return;
+                            } catch (e) {
+                              log(e.toString());
+                            }
+                          },
+                          child: Text(itemList[index].name),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: saverColorScheme.primaryContainer,
+                            foregroundColor: saverColorScheme.onPrimaryContainer,
+                          ),
+                        ),
                       );
                     })),
           ],
@@ -157,18 +183,24 @@ class HomeScreenState extends State<HomeScreen> {
   }
 }
 
-Future<void> moveXFileToFile(XFile xFile, String destinationPath) async {
+Future<bool> moveXFileToFile(XFile xFile, List<String> destinationPaths) async {
+  File sourceFile = File(xFile.path);
+  bool isSucceed = true;
+
   try {
-    File sourceFile = File(xFile.path);
-    final sourceFileName = basename(sourceFile.path);
-    File destinationFile = File('$destinationPath/$sourceFileName');
+    for (String destinationPath in destinationPaths) {
+      final sourceFileName = basename(sourceFile.path);
+      File destinationFile = File('$destinationPath/$sourceFileName');
 
-    await sourceFile.copy(destinationFile.path);
+      await sourceFile.copy(destinationFile.path);
 
-    await sourceFile.delete();
-
-    log('File moved to: ${destinationFile.path}');
+      log('File moved to: ${destinationFile.path}');
+    }
   } catch (e) {
+    isSucceed = false;
     log('Error moving file: $e');
+  } finally {
+    await sourceFile.delete();
   }
+  return isSucceed;
 }

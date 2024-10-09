@@ -1,14 +1,14 @@
 class Saver {
-  final String path;
+  final List<String> paths;
   final String name;
   // TODO implement Saver colors
-  final String? color;
+  final int? color;
 
-  const Saver({required this.path, required this.name, this.color});
+  const Saver({required this.paths, required this.name, this.color});
 
   Map<String, Object?> toMap() {
     return {
-      'path': path,
+      'path': paths,
       'name': name,
       'color': color,
     };

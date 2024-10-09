@@ -12,5 +12,6 @@
     "contactDeveloper": "Contact developer",
     "browseSourceCode": "Browse source code",
     "notYetImplemented": "Not yet implemented",
-    "saverPathExisted": "❌Saver with this path already existed"
+    "saverPathExisted": "❌Saver with this path already existed",
+    "thankForCharlie": "🎉Thanks to Charlie Sierra for the inspiration for this app!"
 }

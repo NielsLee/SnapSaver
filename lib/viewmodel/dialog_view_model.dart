@@ -1,24 +1,31 @@
-
 import 'package:flutter/cupertino.dart';
 
 class DialogViewModel extends ChangeNotifier {
-
   String _name = "Saver Name";
-  String _path = "aaa/bbb/ccc";
+  List<String> _paths = [];
+  Color? _color = null;
 
   String getName() {
     return _name;
   }
 
-  String getPath() {
-    return _path;
+  List<String> getPath() {
+    return _paths;
+  }
+
+  Color? getColor() {
+    return _color;
   }
 
   void setName(name) {
     _name = name;
   }
 
-  void setPath(path) {
-    _path = path;
+  void addPath(path) {
+    _paths.add(path);
+  }
+
+  void setColor(color) {
+    _color = color;
   }
 }

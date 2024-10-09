@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:path/path.dart';
 import 'package:snap_saver/constants.dart';
 import 'package:sqflite/sqflite.dart';
@@ -16,30 +18,64 @@ class SaverDatabase {
     return _database;
   }
 
-  Future<int> insertSaver(Saver saver) async {
+  Future<void> insertSaver(Saver saver) async {
     final db = await database;
 
-    return db.insert(Constants.tableName, saver.toMap(),
+    final saverMap = {
+      'path': saver.paths.toString(),
+      'name': saver.name,
+      'color': saver.color,
+    };
+    // insert saver to saver table
+    db.insert(Constants.saverTableName, saverMap,
         conflictAlgorithm: ConflictAlgorithm.rollback);
+
+    // insert paths to path table
+    final saverName = saver.name;
+    final pathList = saver.paths;
+    for (String path in pathList) {
+      db.insert(
+          Constants.pathTableName,
+          {
+            "saver_name": saverName,
+            "path": path,
+          },
+          conflictAlgorithm: ConflictAlgorithm.rollback);
+    }
+    return;
   }
 
   Future<void> deleteSaver(Saver saver) async {
     final db = await database;
 
-    db.delete(Constants.tableName, where: 'path = ?', whereArgs: [saver.path]);
+    db.delete(Constants.saverTableName,
+        where: 'path = ?', whereArgs: [saver.paths]);
   }
 
   Future<List<Saver>> getAllSavers() async {
     final db = await database;
+    int? saverColor = null;
+    List<Saver> resultList = [];
 
-    final List<Map<String, dynamic>> maps = await db.query(Constants.tableName);
+    final List<Map<String, dynamic>> savers =
+        await db.query(Constants.saverTableName);
 
-    return List.generate(maps.length, (i) {
-      return Saver(
-          path: maps[i]['path'],
-          name: maps[i]['name'],
-          color: maps[i]['color']);
-    });
+    for (Map<String, dynamic> saverMap in savers) {
+      String saverName = saverMap['name'];
+      saverColor = saverMap['color'];
+
+      List<String> pathList = [];
+      List<Map<String, dynamic>> paths =
+          await db.query(Constants.pathTableName);
+      for (Map<String, dynamic> pathMap in paths) {
+        pathList.add(pathMap['path']);
+      }
+
+      resultList
+          .add(Saver(paths: pathList, name: saverName, color: saverColor));
+    }
+
+    return resultList;
   }
 
   Future<Database> _init() async {
@@ -47,15 +83,26 @@ class SaverDatabase {
       join(await getDatabasesPath(), Constants.dbName),
       version: Constants.dbVersion,
       onCreate: (db, version) {
-        return db.execute(
+        db.execute(
           '''
-          CREATE TABLE ${Constants.tableName}(
+          CREATE TABLE ${Constants.saverTableName}(
             path TEXT PRIMARY KEY,
             name TEXT,
-            color TEXT DEFAULT NULL
+            color INTEGER DEFAULT NULL
           )
           ''',
         );
+
+        db.execute('''
+        CREATE TABLE ${Constants.pathTableName}(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          saver_name TEXT,
+          path TEXT,
+          FOREIGN KEY(saver_name) REFERENCES ${Constants.saverTableName}(name)
+        )
+      ''');
+
+        return;
       },
       onUpgrade: _onUpgrade,
       onDowngrade: (db, oldVersion, newVersion) {},
@@ -70,19 +117,19 @@ class SaverDatabase {
 
   Future<void> _1_2(Database db) async {
     await db.execute(
-        'ALTER TABLE ${Constants.tableName} ADD COLUMN color TEXT DEFAULT NULL');
+        'ALTER TABLE ${Constants.saverTableName} ADD COLUMN color INTEGER DEFAULT NULL');
 
     await db.execute('''
-        CREATE TABLE saver_paths(
+        CREATE TABLE ${Constants.saverTableName}(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           saver_name TEXT,
           path TEXT,
-          FOREIGN KEY(saver_name) REFERENCES ${Constants.tableName}(name)
+          FOREIGN KEY(saver_name) REFERENCES ${Constants.saverTableName}(name)
         )
       ''');
 
     final List<Map<String, dynamic>> existingData =
-        await db.query(Constants.tableName);
+        await db.query(Constants.saverTableName);
     for (var row in existingData) {
       await db.insert(
         'saver_paths',
