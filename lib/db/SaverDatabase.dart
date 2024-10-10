@@ -128,7 +128,7 @@ class SaverDatabase {
     ''');
 
     await db.execute('''
-      INSERT INTO tmp_table (path, name）
+      INSERT INTO tmp_table (path, name)
       SELECT path, name FROM ${Constants.saverTableName}
     ''');
 
