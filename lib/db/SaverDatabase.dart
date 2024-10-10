@@ -128,8 +128,8 @@ class SaverDatabase {
     ''');
 
     await db.execute('''
-      INSERT INTO tmp_table (path, name, color)
-      SELECT path, name, color FROM ${Constants.saverTableName}
+      INSERT INTO tmp_table (path, name）
+      SELECT path, name FROM ${Constants.saverTableName}
     ''');
 
     await db.execute('DROP TABLE IF EXISTS ${Constants.saverTableName}');
