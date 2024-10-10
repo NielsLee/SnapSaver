@@ -149,31 +149,6 @@ class MainScaffoldState extends State<MainScaffold> {
       pageBuilder: (BuildContext context, anim1, anmi2) {
         return const InsertButtonDialog();
       },
-      transitionDuration: const Duration(milliseconds: 150),
-      transitionBuilder: (context, anim1, anim2, child) {
-        const beginScale = 0.0;
-        const endScale = 1.0;
-        const beginOpacity = 0.0;
-        const endOpacity = 1.0;
-
-        final scale = beginScale + (endScale - beginScale) * anim1.value;
-        final opacity =
-            beginOpacity + (endOpacity - beginOpacity) * anim1.value;
-
-        final dx = MediaQuery.of(context).size.width * (1 - scale); // Move left
-        final dy = MediaQuery.of(context).size.height * (1 - scale); // Move up
-
-        return Opacity(
-          opacity: opacity,
-          child: Transform.translate(
-            offset: Offset(dx, dy),
-            child: Transform.scale(
-              scale: scale,
-              child: child,
-            ),
-          ),
-        );
-      },
     );
   }
 
@@ -184,31 +159,6 @@ class MainScaffoldState extends State<MainScaffold> {
       barrierLabel: "Help Dialog",
       pageBuilder: (BuildContext context, anim1, anmi2) {
         return HelpDialog();
-      },
-      transitionDuration: const Duration(milliseconds: 150),
-      transitionBuilder: (context, anim1, anim2, child) {
-        const beginScale = 0.0;
-        const endScale = 1.0;
-        const beginOpacity = 0.0;
-        const endOpacity = 1.0;
-
-        final scale = beginScale + (endScale - beginScale) * anim1.value;
-        final opacity =
-            beginOpacity + (endOpacity - beginOpacity) * anim1.value;
-
-        final dx = MediaQuery.of(context).size.width * (1 - scale); // Move left
-        final dy = MediaQuery.of(context).size.height * (scale - 1); // Down
-
-        return Opacity(
-          opacity: opacity,
-          child: Transform.translate(
-            offset: Offset(dx, dy),
-            child: Transform.scale(
-              scale: scale,
-              child: child,
-            ),
-          ),
-        );
       },
     );
   }

@@ -57,6 +57,7 @@ class HomeScreenState extends State<HomeScreen> {
       builder: (BuildContext context, HomeViewModel viewModel, Widget? child) {
         final itemList = viewModel.savers;
         final saversRowPadding = MediaQuery.of(context).size.width * 0.2;
+
         return Column(
           children: [
             Container(
@@ -138,40 +139,46 @@ class HomeScreenState extends State<HomeScreen> {
                             seedColor: Color(itemList[index].color!));
                       }
 
+                      // Function for taking photos
+                      Future<void> _takePhotos() async {
+                        try {
+                          await _initializeControllerFuture;
+
+                          setState(() {
+                            isCapturing = true;
+                          });
+
+                          await Vibration.vibrate(amplitude: 255, duration: 5);
+                          await AudioPlayer()
+                              .play(AssetSource('sounds/camera_shutter.mp3'));
+                          final image = await _controller.takePicture();
+
+                          setState(() {
+                            isCapturing = false;
+                          });
+
+                          // TODO add a progress animate in Saver button
+                          final paths = itemList[index].paths;
+                          await moveXFileToFile(image, paths);
+
+                          if (!context.mounted) return;
+                        } catch (e) {
+                          log(e.toString());
+                        }
+                      }
+
+                      Future<void> _showRemoveDialog() async {}
+
                       return Container(
                         margin: const EdgeInsets.all(4),
                         child: ElevatedButton(
-                          onPressed: () async {
-                            try {
-                              await _initializeControllerFuture;
-
-                              setState(() {
-                                isCapturing = true;
-                              });
-
-                              await Vibration.vibrate(
-                                  amplitude: 255, duration: 5);
-                              await AudioPlayer().play(
-                                  AssetSource('sounds/camera_shutter.mp3'));
-                              final image = await _controller.takePicture();
-
-                              setState(() {
-                                isCapturing = false;
-                              });
-
-                              // TODO add a progress animate in Saver button
-                              final paths = itemList[index].paths;
-                              await moveXFileToFile(image, paths);
-
-                              if (!context.mounted) return;
-                            } catch (e) {
-                              log(e.toString());
-                            }
-                          },
+                          onLongPress: _showRemoveDialog,
+                          onPressed: _takePhotos,
                           child: Text(itemList[index].name),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: saverColorScheme.primaryContainer,
-                            foregroundColor: saverColorScheme.onPrimaryContainer,
+                            foregroundColor:
+                                saverColorScheme.onPrimaryContainer,
                           ),
                         ),
                       );
