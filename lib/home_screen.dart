@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:path/path.dart';
 import 'package:provider/provider.dart';
+import 'package:snap_saver/dialog/remove_saver_dialog.dart';
 import 'package:snap_saver/viewmodel/home_view_model.dart';
 import 'package:vibration/vibration.dart';
 
@@ -167,12 +168,26 @@ class HomeScreenState extends State<HomeScreen> {
                         }
                       }
 
-                      Future<void> _showRemoveDialog() async {}
+                      Future<bool?> _showRemoveDialog() async {
+                        return showGeneralDialog<bool?>(
+                          context: context,
+                          barrierDismissible: true,
+                          barrierLabel: "Remove Saver Dialog",
+                          pageBuilder: (BuildContext context, anim1, anmi2) {
+                            return RemoveSaverDialog(saver: itemList[index]);
+                          },
+                        );
+                      }
 
                       return Container(
                         margin: const EdgeInsets.all(4),
                         child: ElevatedButton(
-                          onLongPress: _showRemoveDialog,
+                          onLongPress: () async {
+                            final remove = await _showRemoveDialog();
+                            if (remove == true) {
+                              viewModel.removeSaver(itemList[index]);
+                            }
+                          },
                           onPressed: _takePhotos,
                           child: Text(itemList[index].name),
                           style: ElevatedButton.styleFrom(

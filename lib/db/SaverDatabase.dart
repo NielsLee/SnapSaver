@@ -22,7 +22,7 @@ class SaverDatabase {
     final db = await database;
 
     final saverMap = {
-      'path': saver.paths.toString(),
+      'path': null,
       'name': saver.name,
       'color': saver.color,
     };
@@ -49,7 +49,10 @@ class SaverDatabase {
     final db = await database;
 
     db.delete(Constants.saverTableName,
-        where: 'path = ?', whereArgs: [saver.paths]);
+        where: 'name = ?', whereArgs: [saver.name]);
+
+    db.delete(Constants.pathTableName,
+        where: 'saver_name = ?', whereArgs: [saver.name]);
   }
 
   Future<List<Saver>> getAllSavers() async {
@@ -65,8 +68,8 @@ class SaverDatabase {
       saverColor = saverMap['color'];
 
       List<String> pathList = [];
-      List<Map<String, dynamic>> paths =
-          await db.query(Constants.pathTableName);
+      List<Map<String, dynamic>> paths = await db.query(Constants.pathTableName,
+          where: 'saver_name = ?', whereArgs: [saverName]);
       for (Map<String, dynamic> pathMap in paths) {
         pathList.add(pathMap['path']);
       }
@@ -116,8 +119,23 @@ class SaverDatabase {
   }
 
   Future<void> _1_2(Database db) async {
-    await db.execute(
-        'ALTER TABLE ${Constants.saverTableName} ADD COLUMN color INTEGER DEFAULT NULL');
+    await db.execute('''
+      CREATE TABLE tmp_table(
+        path TEXT,
+        name TEXT PRIMARY KEY,
+        color INTEGER DEFAULT NULL
+      )
+    ''');
+
+    await db.execute('''
+      INSERT INTO tmp_table (path, name, color)
+      SELECT path, name, color FROM ${Constants.saverTableName}
+    ''');
+
+    await db.execute('DROP TABLE IF EXISTS ${Constants.saverTableName}');
+
+    await db
+        .execute('ALTER TABLE tmp_table RENAME TO ${Constants.saverTableName}');
 
     await db.execute('''
         CREATE TABLE ${Constants.saverTableName}(

@@ -59,7 +59,7 @@ class InsertSaverDialogState extends State<InsertSaverDialog> {
                         hasManuallyInputPath = true;
                       },
                       decoration: InputDecoration(
-                          label: Text(AppLocalizations.of(context)!.name),
+                          label: Text(AppLocalizations.of(context)!.saverName),
                           border: const OutlineInputBorder(
                               borderRadius:
                                   BorderRadius.all(Radius.circular(12)))),

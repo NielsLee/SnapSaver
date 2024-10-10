@@ -3,9 +3,9 @@
     "howToUse": "How to use?",
     "helpContent": "First, click the button in the lower right corner, enter the path and name to save the photo, and create a photo shooting button; then, click the created button to take a photo and save it to the path corresponding to the button.\nNotice: In some devices, newly created path need a reboot to be recognized by album app.",
     "createANewSaver": "Create a new Saver",
-    "path": "Photo save path",
+    "saverPath": "Photo save path",
     "selectPath": "Select save path",
-    "name": "Button name",
+    "saverName": "Saver name",
     "ok": "OK",
     "cancel": "Cancel",
     "importAllExistingAlbums": "Import all existing albums",
@@ -13,5 +13,8 @@
     "browseSourceCode": "Browse source code",
     "notYetImplemented": "Not yet implemented",
     "saverPathExisted": "❌Saver with this path already existed",
-    "thankForCharlie": "🎉Thanks to Charlie Sierra for the inspiration for this app!"
+    "thankForCharlie": "🎉Thanks to Charlie Sierra for the inspiration for this app!",
+    "removeSaver": "Remove Saver?",
+    "name": "name",
+    "path": "path"
 }
