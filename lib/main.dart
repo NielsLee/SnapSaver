@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:snap_saver/dialog/help_dialog.dart';
-import 'package:snap_saver/dialog/insert_button_dialog.dart';
+import 'package:snap_saver/dialog/insert_saver_dialog.dart';
 import 'package:snap_saver/settings_screen.dart';
 import 'package:snap_saver/viewmodel/dialog_view_model.dart';
 import 'package:snap_saver/viewmodel/home_view_model.dart';
@@ -147,7 +147,7 @@ class MainScaffoldState extends State<MainScaffold> {
       context: context,
       barrierDismissible: false,
       pageBuilder: (BuildContext context, anim1, anmi2) {
-        return const InsertButtonDialog();
+        return const InsertSaverDialog();
       },
     );
   }

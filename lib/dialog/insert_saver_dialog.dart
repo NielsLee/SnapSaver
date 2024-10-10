@@ -9,14 +9,14 @@ import 'package:vibration/vibration.dart';
 
 import '../file/android_native_path_picker.dart';
 
-class InsertButtonDialog extends StatefulWidget {
-  const InsertButtonDialog({super.key});
+class InsertSaverDialog extends StatefulWidget {
+  const InsertSaverDialog({super.key});
 
   @override
-  State<StatefulWidget> createState() => InsertButtonDialogState();
+  State<StatefulWidget> createState() => InsertSaverDialogState();
 }
 
-class InsertButtonDialogState extends State<InsertButtonDialog> {
+class InsertSaverDialogState extends State<InsertSaverDialog> {
   // List for path selectors
   List<PathSelectorEntity> pathSelectors = [PathSelectorEntity()];
   // Controller for input saver name and paths
