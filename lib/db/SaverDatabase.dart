@@ -138,7 +138,7 @@ class SaverDatabase {
         .execute('ALTER TABLE tmp_table RENAME TO ${Constants.saverTableName}');
 
     await db.execute('''
-        CREATE TABLE IF NOT EXISTS ${Constants.saverTableName}(
+        CREATE TABLE IF NOT EXISTS ${Constants.pathTableName}(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           saver_name TEXT,
           path TEXT,
