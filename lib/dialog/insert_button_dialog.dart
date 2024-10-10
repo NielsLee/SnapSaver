@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import 'package:snap_saver/dialog/path_selector_entity.dart';
@@ -26,9 +27,21 @@ class InsertButtonDialogState extends State<InsertButtonDialog> {
   bool hasManuallyInputPath = false;
   // Color of the Saver button
   Color? saverColor = null;
+  // Selected color index in color list
+  int selectedColorIndex = -1;
 
   @override
   Widget build(BuildContext context) {
+    final colorList = [
+      Colors.red,
+      Colors.orange,
+      Colors.yellow,
+      Colors.green,
+      Colors.cyan,
+      Colors.blue,
+      Colors.purple
+    ];
+
     return ChangeNotifierProvider(
         create: (_) => DialogViewModel(),
         child: Consumer<DialogViewModel>(
@@ -150,65 +163,21 @@ class InsertButtonDialogState extends State<InsertButtonDialog> {
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
-                        children: [
-                          IconButton(
-                              onPressed: () {
-                                saverColor = Colors.red;
-                              },
-                              icon: Icon(
-                                Icons.folder,
-                                color: Colors.red,
-                              )),
-                          IconButton(
-                              onPressed: () {
-                                saverColor = Colors.orange;
-                              },
-                              icon: Icon(
-                                Icons.folder,
-                                color: Colors.orange,
-                              )),
-                          IconButton(
-                              onPressed: () {
-                                saverColor = Colors.yellow;
-                              },
-                              icon: Icon(
-                                Icons.folder,
-                                color: Colors.yellow,
-                              )),
-                          IconButton(
-                              onPressed: () {
-                                saverColor = Colors.green;
-                              },
-                              icon: Icon(
-                                Icons.folder,
-                                color: Colors.green,
-                              )),
-                          IconButton(
-                              onPressed: () {
-                                saverColor = Colors.cyan;
-                              },
-                              icon: Icon(
-                                Icons.folder,
-                                color: Colors.cyan,
-                              )),
-                          IconButton(
-                              onPressed: () {
-                                saverColor = Colors.blue;
-                              },
-                              icon: Icon(
-                                Icons.folder,
-                                color: Colors.blue,
-                              )),
-                          IconButton(
-                              onPressed: () {
-                                saverColor = Colors.purple;
-                              },
-                              icon: Icon(
-                                Icons.folder,
-                                color: Colors.purple,
-                              )),
-                        ],
-                      ),
+                          children: colorList.asMap().entries.map((colorEntry) {
+                        return IconButton(
+                          isSelected: selectedColorIndex == colorEntry.key,
+                          selectedIcon: Icon(
+                            Icons.check,
+                            color: colorEntry.value,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              selectedColorIndex = colorEntry.key;
+                            });
+                          },
+                          icon: Icon(Icons.folder, color: colorEntry.value),
+                        );
+                      }).toList()),
                     )
                   ],
                 ),
@@ -242,7 +211,9 @@ class InsertButtonDialogState extends State<InsertButtonDialog> {
                       // no name or no path, do nothing
                     } else {
                       dialogViewModel.setName(inputName);
-                      dialogViewModel.setColor(saverColor);
+                      if (selectedColorIndex > 0) {
+                        dialogViewModel.setColor(colorList[selectedColorIndex]);
+                      }
                       Navigator.of(context).pop(dialogViewModel);
                     }
                   },
