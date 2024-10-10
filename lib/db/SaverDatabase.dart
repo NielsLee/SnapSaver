@@ -88,7 +88,7 @@ class SaverDatabase {
       onCreate: (db, version) {
         db.execute(
           '''
-          CREATE TABLE ${Constants.saverTableName}(
+          CREATE TABLE IF NOT EXISTS ${Constants.saverTableName}(
             path TEXT PRIMARY KEY,
             name TEXT,
             color INTEGER DEFAULT NULL
@@ -97,7 +97,7 @@ class SaverDatabase {
         );
 
         db.execute('''
-        CREATE TABLE ${Constants.pathTableName}(
+        CREATE TABLE IF NOT EXISTS ${Constants.pathTableName}(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           saver_name TEXT,
           path TEXT,
@@ -120,7 +120,7 @@ class SaverDatabase {
 
   Future<void> _1_2(Database db) async {
     await db.execute('''
-      CREATE TABLE tmp_table(
+      CREATE TABLE IF NOT EXISTS tmp_table(
         path TEXT,
         name TEXT PRIMARY KEY,
         color INTEGER DEFAULT NULL
@@ -138,7 +138,7 @@ class SaverDatabase {
         .execute('ALTER TABLE tmp_table RENAME TO ${Constants.saverTableName}');
 
     await db.execute('''
-        CREATE TABLE ${Constants.saverTableName}(
+        CREATE TABLE IF NOT EXISTS ${Constants.saverTableName}(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           saver_name TEXT,
           path TEXT,
