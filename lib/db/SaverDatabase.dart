@@ -114,7 +114,7 @@ class SaverDatabase {
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion == 1) {
-      _1_2(db);
+      await _1_2(db);
     }
   }
 
