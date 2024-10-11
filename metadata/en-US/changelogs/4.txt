@@ -1,0 +1,3 @@
+Support Saver color selection 🎨
+Support Saver deletion
+Support storing multiple paths in one Saver
