@@ -211,7 +211,7 @@ class InsertSaverDialogState extends State<InsertSaverDialog> {
                       // no name or no path, do nothing
                     } else {
                       dialogViewModel.setName(inputName);
-                      if (selectedColorIndex > 0) {
+                      if (selectedColorIndex >= 0) {
                         dialogViewModel.setColor(colorList[selectedColorIndex]);
                       }
                       Navigator.of(context).pop(dialogViewModel);
