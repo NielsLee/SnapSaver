@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -75,7 +76,13 @@ class SettingsScreenState extends State<SettingsScreen> {
     );
 
     if (!await launchUrl(emailUrl)) {
-      throw Exception('Could not launch $emailUrl');
+      Fluttertoast.showToast(
+        msg: '☹️Failed to launch email',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.white,
+        textColor: Colors.black,
+      );
     }
   }
 
@@ -86,7 +93,13 @@ class SettingsScreenState extends State<SettingsScreen> {
     );
 
     if (!await launchUrl(githubUrl)) {
-      throw Exception('Could not launch $githubUrl');
+      Fluttertoast.showToast(
+        msg: '☹️Failed to launch Github',
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        backgroundColor: Colors.white,
+        textColor: Colors.black,
+      );
     }
   }
 }

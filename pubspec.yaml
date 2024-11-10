@@ -50,6 +50,7 @@ dependencies:
   flutter_launcher_icons: ^0.13.1
   vibration: ^1.8.3
   intl: any
+  fluttertoast: ^8.2.5
 
 dev_dependencies:
   flutter_test:
