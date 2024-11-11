@@ -179,21 +179,27 @@ class HomeScreenState extends State<HomeScreen> {
                         );
                       }
 
+                      // Saver button
                       return Container(
                         margin: const EdgeInsets.all(4),
-                        child: ElevatedButton(
-                          onLongPress: () async {
-                            final remove = await _showRemoveDialog();
-                            if (remove == true) {
-                              viewModel.removeSaver(itemList[index]);
-                            }
-                          },
-                          onPressed: _takePhotos,
-                          child: Text(itemList[index].name),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: saverColorScheme.primaryContainer,
-                            foregroundColor:
-                                saverColorScheme.onPrimaryContainer,
+                        child: Badge(
+                          offset: Offset(-2, 2),
+                          label: Text(itemList[index].count.toString()),
+                          child: ElevatedButton(
+                            onLongPress: () async {
+                              final remove = await _showRemoveDialog();
+                              if (remove == true) {
+                                viewModel.removeSaver(itemList[index]);
+                              }
+                            },
+                            onPressed: _takePhotos,
+                            child: Text(itemList[index].name),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  saverColorScheme.primaryContainer,
+                              foregroundColor:
+                                  saverColorScheme.onPrimaryContainer,
+                            ),
                           ),
                         ),
                       );

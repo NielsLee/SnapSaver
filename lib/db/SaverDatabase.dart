@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:path/path.dart';
 import 'package:snap_saver/constants.dart';
 import 'package:sqflite/sqflite.dart';
@@ -25,6 +23,9 @@ class SaverDatabase {
       'path': null,
       'name': saver.name,
       'color': saver.color,
+      'count': saver.count,
+      'photoName': saver.photoName,
+      'suffixType': saver.suffixType
     };
     // insert saver to saver table
     db.insert(Constants.saverTableName, saverMap,
@@ -57,7 +58,6 @@ class SaverDatabase {
 
   Future<List<Saver>> getAllSavers() async {
     final db = await database;
-    int? saverColor = null;
     List<Saver> resultList = [];
 
     final List<Map<String, dynamic>> savers =
@@ -65,7 +65,10 @@ class SaverDatabase {
 
     for (Map<String, dynamic> saverMap in savers) {
       String saverName = saverMap['name'];
-      saverColor = saverMap['color'];
+      int? saverColor = saverMap['color'];
+      int count = saverMap['count'];
+      String? photoName = saverMap['photoName'];
+      int suffixType = saverMap['suffixType'];
 
       List<String> pathList = [];
       List<Map<String, dynamic>> paths = await db.query(Constants.pathTableName,
@@ -74,8 +77,13 @@ class SaverDatabase {
         pathList.add(pathMap['path']);
       }
 
-      resultList
-          .add(Saver(paths: pathList, name: saverName, color: saverColor));
+      resultList.add(Saver(
+          paths: pathList,
+          name: saverName,
+          color: saverColor,
+          count: count,
+          photoName: photoName,
+          suffixType: suffixType));
     }
 
     return resultList;
@@ -91,7 +99,10 @@ class SaverDatabase {
           CREATE TABLE IF NOT EXISTS ${Constants.saverTableName}(
             path TEXT PRIMARY KEY,
             name TEXT,
-            color INTEGER DEFAULT NULL
+            color INTEGER DEFAULT NULL,
+            count INTEGER,
+            photoName TEXT DEFAULT NULL,
+            suffixType INTEGER
           )
           ''',
         );
@@ -115,6 +126,9 @@ class SaverDatabase {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion == 1) {
       await _1_2(db);
+      await _2_3(db);
+    } else if (oldVersion == 2) {
+      await _2_3(db);
     }
   }
 
@@ -154,5 +168,19 @@ class SaverDatabase {
         {'saver_name': row['name'], 'path': row['path']},
       );
     }
+  }
+
+  Future<void> _2_3(Database db) async {
+    await db.execute('''
+        ALTER TABLE ${Constants.saverTableName} ADD COLUMN count INTEGER DEFAULT 0
+      ''');
+
+    await db.execute('''
+        ALTER TABLE ${Constants.saverTableName} ADD COLUMN photoName TEXT DEFAULT NULL
+      ''');
+
+    await db.execute('''
+        ALTER TABLE ${Constants.saverTableName} ADD COLUMN suffixType INTEGER DEFAULT 0
+      ''');
   }
 }
