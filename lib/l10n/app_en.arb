@@ -6,8 +6,11 @@
     "saverPath": "Photo save path",
     "selectPath": "Select save path",
     "saverName": "Saver name",
+    "saverNameDescription": "Input name of this saver",
+    "fileName": "File name",
     "ok": "OK",
     "cancel": "Cancel",
+    "preview": "Preview",
     "importAllExistingAlbums": "Import all existing albums",
     "contactDeveloper": "Contact developer",
     "browseSourceCode": "Browse source code",
@@ -16,5 +19,11 @@
     "thankForCharlie": "🎉Thanks to Charlie Sierra for the inspiration for this app!",
     "removeSaver": "Remove Saver?",
     "name": "name",
-    "path": "path"
+    "path": "path",
+    "photoName": "PhotoName",
+    "photoNameDescription": "Input photo name",
+    "more": "More",
+    "photoIndex": "Index",
+    "photoTimestamp": "Time",
+    "photoNameExample": "PhotoName Example"
 }

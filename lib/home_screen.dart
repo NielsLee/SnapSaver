@@ -6,10 +6,12 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:path/path.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:snap_saver/dialog/remove_saver_dialog.dart';
 import 'package:snap_saver/viewmodel/home_view_model.dart';
 import 'package:vibration/vibration.dart';
+import 'package:path/path.dart' as path;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -50,6 +52,19 @@ class HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> requestStoragePermission() async {
+    PermissionStatus status = await Permission.manageExternalStorage.request();
+
+    if (status.isGranted) {
+      // permission granted
+    } else if (status.isDenied) {
+      // permission denied
+    } else if (status.isPermanentlyDenied) {
+      // need go to settings
+      await openAppSettings();
+    }
   }
 
   @override
@@ -143,6 +158,8 @@ class HomeScreenState extends State<HomeScreen> {
                       // Function for taking photos
                       Future<void> _takePhotos() async {
                         try {
+                          requestStoragePermission();
+
                           await _initializeControllerFuture;
 
                           setState(() {
@@ -160,7 +177,8 @@ class HomeScreenState extends State<HomeScreen> {
 
                           // TODO add a progress animate in Saver button
                           final paths = itemList[index].paths;
-                          await moveXFileToFile(image, paths);
+                          final newName = itemList[index].photoName;
+                          await moveXFileToFile(image, paths, newName);
 
                           if (!context.mounted) return;
                         } catch (e) {
@@ -211,18 +229,21 @@ class HomeScreenState extends State<HomeScreen> {
   }
 }
 
-Future<bool> moveXFileToFile(XFile xFile, List<String> destinationPaths) async {
+Future<bool> moveXFileToFile(
+    XFile xFile, List<String> destinationPaths, String? newName) async {
   File sourceFile = File(xFile.path);
   bool isSucceed = true;
 
   try {
     for (String destinationPath in destinationPaths) {
       final sourceFileName = basename(sourceFile.path);
+      String extension = path.extension(sourceFileName);
       File destinationFile = File('$destinationPath/$sourceFileName');
 
-      await sourceFile.copy(destinationFile.path);
+      await sourceFile
+          .copy(destinationFile.parent.path + '/$newName.$extension');
 
-      log('File moved to: ${destinationFile.path}');
+      log('File moved to: ${destinationFile.parent.path + '/$newName$extension'}');
     }
   } catch (e) {
     isSucceed = false;

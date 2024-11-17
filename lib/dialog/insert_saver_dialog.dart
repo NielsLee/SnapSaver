@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:path/path.dart';
 import 'package:provider/provider.dart';
+import 'package:snap_saver/dialog/more_dialog.dart';
 import 'package:snap_saver/dialog/path_selector_entity.dart';
+import 'package:snap_saver/entity/more.dart';
 import 'package:snap_saver/viewmodel/dialog_view_model.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:vibration/vibration.dart';
@@ -22,6 +23,7 @@ class InsertSaverDialogState extends State<InsertSaverDialog> {
   // Controller for input saver name and paths
   TextEditingController nameController = TextEditingController();
   TextEditingController pathController = TextEditingController();
+  TextEditingController fileNameController = TextEditingController();
 
   // Indicates whether user has manually input path
   bool hasManuallyInputPath = false;
@@ -42,30 +44,45 @@ class InsertSaverDialogState extends State<InsertSaverDialog> {
       Colors.purple
     ];
 
+    Future<More?> _showMoreDialog() async {
+      return showGeneralDialog<More>(
+        context: context,
+        barrierDismissible: true,
+        barrierLabel: "More Dialog",
+        pageBuilder: (BuildContext context, anim1, anmi2) {
+          return MoreDialog();
+        },
+      );
+    }
+
     return ChangeNotifierProvider(
         create: (_) => DialogViewModel(),
         child: Consumer<DialogViewModel>(
           builder: (_, dialogViewModel, __) {
             return AlertDialog(
+              insetPadding: EdgeInsets.all(16),
               contentPadding: EdgeInsets.fromLTRB(16, 20, 16, 0),
               title: Text(AppLocalizations.of(context)!.createANewSaver),
               content: SingleChildScrollView(
                 child: ListBody(
                   children: <Widget>[
                     // Text field for input name of new saver
+                    Text(AppLocalizations.of(context)!.saverName + ": "),
                     TextField(
                       controller: nameController,
                       onTap: () {
                         hasManuallyInputPath = true;
                       },
                       decoration: InputDecoration(
-                          label: Text(AppLocalizations.of(context)!.saverName),
+                          label: Text(AppLocalizations.of(context)!
+                              .saverNameDescription),
+                          floatingLabelBehavior: FloatingLabelBehavior.never,
                           border: const OutlineInputBorder(
                               borderRadius:
                                   BorderRadius.all(Radius.circular(12)))),
                     ),
 
-                    Padding(padding: EdgeInsets.all(8)),
+                    Padding(padding: EdgeInsets.all(4)),
 
                     // Columns for path select
                     Column(
@@ -102,7 +119,8 @@ class InsertSaverDialogState extends State<InsertSaverDialog> {
                                       }
                                     });
                                   },
-                                  child: Text("Select Path"),
+                                  child: Text(
+                                      AppLocalizations.of(context)!.selectPath),
                                   style: OutlinedButton.styleFrom(
                                     backgroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
@@ -183,6 +201,19 @@ class InsertSaverDialogState extends State<InsertSaverDialog> {
                 ),
               ),
               actions: <Widget>[
+                // More Button
+                TextButton(
+                  child: Text(AppLocalizations.of(context)!.more),
+                  onPressed: () async {
+                    Vibration.vibrate(amplitude: 255, duration: 5);
+                    var more = await _showMoreDialog();
+                    if (more != null) {
+                      dialogViewModel.setPhotoName(more.photoName);
+                      dialogViewModel.setSuffixType(more.suffixType);
+                    }
+                  },
+                ),
+
                 // cancel button
                 TextButton(
                   child: Text(AppLocalizations.of(context)!.cancel),
@@ -206,7 +237,6 @@ class InsertSaverDialogState extends State<InsertSaverDialog> {
                       },
                     ).toList();
 
-                    print("name:$inputName, path: $inputPath");
                     if (inputName.isEmpty || avaliablePaths.isEmpty) {
                       // no name or no path, do nothing
                     } else {

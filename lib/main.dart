@@ -99,7 +99,10 @@ class MainScaffoldState extends State<MainScaffold> {
               final newSaver = Saver(
                   paths: dialogViewModel.getPath(),
                   name: dialogViewModel.getName(),
-                  color: dialogViewModel.getColor()?.value);
+                  color: dialogViewModel.getColor()?.value,
+                  photoName: dialogViewModel.getPhotoName(),
+                  suffixType: dialogViewModel.getSuffixType());
+
               int res = homeViewModel.addSaver(newSaver, context);
               if (res == 0) {
                 final snackBar = SnackBar(

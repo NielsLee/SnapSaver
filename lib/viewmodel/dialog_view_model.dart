@@ -4,6 +4,8 @@ class DialogViewModel extends ChangeNotifier {
   String _name = "Saver Name";
   List<String> _paths = [];
   Color? _color = null;
+  String? _photoName;
+  int _suffixType = 0;
 
   String getName() {
     return _name;
@@ -17,6 +19,14 @@ class DialogViewModel extends ChangeNotifier {
     return _color;
   }
 
+  String? getPhotoName() {
+    return _photoName;
+  }
+
+  int getSuffixType() {
+    return _suffixType;
+  }
+
   void setName(name) {
     _name = name;
   }
@@ -27,5 +37,13 @@ class DialogViewModel extends ChangeNotifier {
 
   void setColor(color) {
     _color = color;
+  }
+
+  void setPhotoName(name) {
+    _photoName = name;
+  }
+
+  void setSuffixType(type) {
+    _suffixType = type;
   }
 }

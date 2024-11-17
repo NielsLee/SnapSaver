@@ -6,8 +6,11 @@
     "saverPath": "图片保存路径",
     "selectPath": "选择保存路径",
     "saverName": "拍照键名称",
+    "saverNameDescription": "输入此拍照键的名称",
+    "fileName": "文件名称",
     "ok": "确定",
     "cancel": "取消",
+    "preview": "预览",
     "importAllExistingAlbums": "导入全部已有相册",
     "contactDeveloper": "联系开发者",
     "browseSourceCode": "浏览源码",
@@ -16,5 +19,11 @@
     "thankForCharlie": "🎉感谢Charlie Sierra为本App提供的灵感！",
     "removeSaver": "删除拍照键?",
     "name": "名称",
-    "path": "路径"
+    "path": "路径",
+    "photoName": "照片名称",
+    "photoNameDescription": "输入照片名称",
+    "more": "更多",
+    "photoIndex": "序号",
+    "photoTimestamp": "时间",
+    "photoNameExample": "照片名称示例"
 }
