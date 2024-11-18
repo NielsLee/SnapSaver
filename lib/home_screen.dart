@@ -5,6 +5,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:intl/intl.dart';
 import 'package:path/path.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
@@ -54,7 +55,7 @@ class HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  Future<void> requestStoragePermission() async {
+  Future<void> _requestStoragePermission() async {
     PermissionStatus status = await Permission.manageExternalStorage.request();
 
     if (status.isGranted) {
@@ -158,8 +159,6 @@ class HomeScreenState extends State<HomeScreen> {
                       // Function for taking photos
                       Future<void> _takePhotos() async {
                         try {
-                          requestStoragePermission();
-
                           await _initializeControllerFuture;
 
                           setState(() {
@@ -175,10 +174,56 @@ class HomeScreenState extends State<HomeScreen> {
                             isCapturing = false;
                           });
 
+                          _requestStoragePermission();
+
                           // TODO add a progress animate in Saver button
-                          final paths = itemList[index].paths;
-                          final newName = itemList[index].photoName;
+                          final saver = itemList[index];
+                          final paths = saver.paths;
+                          var newName = saver.photoName;
+
+                          if (newName != null) {
+                            switch (saver.suffixType) {
+                              case 0:
+                                {
+                                  newName = newName + saver.count.toString();
+                                }
+                              case 1:
+                                {
+                                  DateTime now = DateTime.now();
+                                  String nowStr =
+                                      DateFormat('yyyyMMddHHmmss').format(now);
+                                  newName += nowStr;
+                                }
+                              case 2:
+                                {
+                                  newName =
+                                      newName + '_' + saver.count.toString();
+                                }
+                              case 3:
+                                {
+                                  DateTime now = DateTime.now();
+                                  String nowStr =
+                                      DateFormat('yyyyMMddHHmmss').format(now);
+                                  newName += '_' + nowStr;
+                                }
+                              case 4:
+                                {
+                                  newName =
+                                      newName + '-' + saver.count.toString();
+                                }
+                              case 5:
+                                {
+                                  DateTime now = DateTime.now();
+                                  String nowStr =
+                                      DateFormat('yyyyMMddHHmmss').format(now);
+                                  newName += '-' + nowStr;
+                                }
+                            }
+                          }
                           await moveXFileToFile(image, paths, newName);
+
+                          saver.count++;
+                          viewModel.updateSaver(saver);
 
                           if (!context.mounted) return;
                         } catch (e) {
@@ -200,24 +245,25 @@ class HomeScreenState extends State<HomeScreen> {
                       // Saver button
                       return Container(
                         margin: const EdgeInsets.all(4),
-                        child: Badge(
-                          offset: Offset(-2, 2),
-                          label: Text(itemList[index].count.toString()),
-                          child: ElevatedButton(
-                            onLongPress: () async {
-                              final remove = await _showRemoveDialog();
-                              if (remove == true) {
-                                viewModel.removeSaver(itemList[index]);
-                              }
-                            },
-                            onPressed: _takePhotos,
-                            child: Text(itemList[index].name),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  saverColorScheme.primaryContainer,
-                              foregroundColor:
-                                  saverColorScheme.onPrimaryContainer,
-                            ),
+                        child: ElevatedButton(
+                          onLongPress: () async {
+                            final remove = await _showRemoveDialog();
+                            if (remove == true) {
+                              viewModel.removeSaver(itemList[index]);
+                            }
+                          },
+                          onPressed: _takePhotos,
+                          child: Badge(
+                              isLabelVisible:
+                                  (itemList[index].suffixType % 2 == 0),
+                              backgroundColor: Colors.deepOrange,
+                              offset: Offset(16, -16),
+                              label: Text(itemList[index].count.toString()),
+                              child: Text(itemList[index].name)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: saverColorScheme.primaryContainer,
+                            foregroundColor:
+                                saverColorScheme.onPrimaryContainer,
                           ),
                         ),
                       );
@@ -240,8 +286,12 @@ Future<bool> moveXFileToFile(
       String extension = path.extension(sourceFileName);
       File destinationFile = File('$destinationPath/$sourceFileName');
 
-      await sourceFile
-          .copy(destinationFile.parent.path + '/$newName.$extension');
+      if (newName != null) {
+        await sourceFile
+            .copy(destinationFile.parent.path + '/$newName$extension');
+      } else {
+        await sourceFile.copy(destinationFile.path);
+      }
 
       log('File moved to: ${destinationFile.parent.path + '/$newName$extension'}');
     }

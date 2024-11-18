@@ -33,4 +33,19 @@ class HomeViewModel extends ChangeNotifier {
     _saverList.addAll(existedSavers);
     notifyListeners();
   }
+
+  int updateSaver(Saver updatedSaver) {
+    final index =
+        _saverList.indexWhere((saver) => saver.name == updatedSaver.name);
+
+    if (index != -1) {
+      _saverList[index] = updatedSaver;
+
+      SaverDatabase().updateSaver(updatedSaver);
+      notifyListeners();
+      return 1; // success
+    } else {
+      return 0;
+    }
+  }
 }

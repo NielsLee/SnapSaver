@@ -89,6 +89,26 @@ class SaverDatabase {
     return resultList;
   }
 
+Future<int> updateSaver(Saver saver) async {
+  final db = await database;
+
+   final saverMap = {
+      'path': null,
+      'name': saver.name,
+      'color': saver.color,
+      'count': saver.count,
+      'photoName': saver.photoName,
+      'suffixType': saver.suffixType
+    };
+
+  return await db.update(
+    Constants.saverTableName,
+    saverMap,
+    where: 'name = ?', // 条件
+    whereArgs: [saver.name], // 条件参数
+  );
+}
+
   Future<Database> _init() async {
     return openDatabase(
       join(await getDatabasesPath(), Constants.dbName),
