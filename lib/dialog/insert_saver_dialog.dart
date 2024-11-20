@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import 'package:snap_saver/dialog/more_dialog.dart';
@@ -210,6 +211,13 @@ class InsertSaverDialogState extends State<InsertSaverDialog> {
                     if (more != null) {
                       dialogViewModel.setPhotoName(more.photoName);
                       dialogViewModel.setSuffixType(more.suffixType);
+                      Fluttertoast.showToast(
+                        msg: AppLocalizations.of(context)!.moreDialogFinished,
+                        toastLength: Toast.LENGTH_SHORT,
+                        gravity: ToastGravity.BOTTOM,
+                        backgroundColor: Colors.white,
+                        textColor: Colors.black,
+                      );
                     }
                   },
                 ),

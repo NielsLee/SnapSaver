@@ -25,5 +25,6 @@
     "more": "更多",
     "photoIndex": "序号",
     "photoTimestamp": "时间",
-    "photoNameExample": "照片名称示例"
+    "photoNameExample": "照片名称示例",
+    "moreDialogFinished": "照片名称设置完毕"
 }

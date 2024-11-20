@@ -158,6 +158,10 @@ class HomeScreenState extends State<HomeScreen> {
 
                       // Function for taking photos
                       Future<void> _takePhotos() async {
+                        if (isCapturing) {
+                          // if is capturing, skip
+                          return;
+                        }
                         try {
                           await _initializeControllerFuture;
 
