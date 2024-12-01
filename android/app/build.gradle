@@ -63,6 +63,10 @@ android {
             signingConfig signingConfigs.release
         }
     }
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
 }
 
 flutter {
