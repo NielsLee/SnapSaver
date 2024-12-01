@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 
@@ -27,6 +28,7 @@ class HomeScreenState extends State<HomeScreen> {
   late CameraController _controller;
   Future<void>? _initializeControllerFuture;
   bool isCapturing = false;
+  Offset? focusOffset = null;
 
   @override
   void initState() {
@@ -94,7 +96,37 @@ class HomeScreenState extends State<HomeScreen> {
                                 children: <Widget>[
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(18),
-                                    child: CameraPreview(_controller),
+                                    child: LayoutBuilder(
+                                      builder: (BuildContext context,
+                                          BoxConstraints constraints) {
+                                        return Listener(
+                                          onPointerDown: (downEvent) {
+                                            _onCameraPreviewTap(
+                                                downEvent, constraints);
+                                            setState(() {
+                                              focusOffset = Offset(
+                                                  downEvent.localPosition.dx,
+                                                  downEvent.localPosition.dy);
+                                            });
+                                            // delay 1 second and remove focus box
+                                            Timer(Duration(seconds: 1), () {
+                                              setState(() {
+                                                focusOffset = null;
+                                              });
+                                            });
+                                          },
+                                          child: Stack(
+                                            children: [
+                                              CameraPreview(_controller),
+                                              CustomPaint(
+                                                painter: FocusBoxPainter(
+                                                    focusOffset),
+                                              )
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
                                   ),
                                   DropdownButton<int>(
                                     value: selectedCamera,
@@ -277,6 +309,13 @@ class HomeScreenState extends State<HomeScreen> {
       },
     );
   }
+
+  void _onCameraPreviewTap(PointerDownEvent event, BoxConstraints constraints) {
+    final x = event.localPosition.dx / constraints.maxWidth;
+    final y = event.localPosition.dy / constraints.maxHeight;
+
+    _controller.setFocusPoint(Offset(x, y));
+  }
 }
 
 Future<bool> moveXFileToFile(
@@ -306,4 +345,35 @@ Future<bool> moveXFileToFile(
     await sourceFile.delete();
   }
   return isSucceed;
+}
+
+class FocusBoxPainter extends CustomPainter {
+  final Offset? boxOffset;
+  final double boxSize = 50;
+
+  FocusBoxPainter(this.boxOffset);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (boxOffset == null) {
+      return;
+    }
+    final Paint paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    final Rect rect = Rect.fromLTWH(
+      boxOffset!.dx - boxSize / 2,
+      boxOffset!.dy - boxSize / 2,
+      boxSize,
+      boxSize,
+    );
+    canvas.drawRect(rect, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return true; // 每次都需要重绘
+  }
 }
