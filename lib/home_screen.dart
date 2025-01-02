@@ -26,9 +26,12 @@ class HomeScreenState extends State<HomeScreen> {
   late List<CameraDescription> cameras;
   late int selectedCamera = 0;
   late CameraController _controller;
+  double _minZoomLevel = 1 / 2;
+  double _maxZoomLevel = 3;
   Future<void>? _initializeControllerFuture;
   bool isCapturing = false;
   Offset? focusOffset = null;
+  double _sliderValue = 1;
 
   @override
   void initState() {
@@ -41,14 +44,18 @@ class HomeScreenState extends State<HomeScreen> {
     WidgetsFlutterBinding.ensureInitialized();
 
     cameras = await availableCameras();
+
+    await Permission.camera.request();
     _controller = CameraController(
         cameras[selectedCamera], ResolutionPreset.max,
         enableAudio: false);
 
     _initializeControllerFuture = _controller.initialize();
+
     if (mounted) {
       setState(() {});
     }
+    await _resetZoomLevel();
   }
 
   @override
@@ -128,37 +135,60 @@ class HomeScreenState extends State<HomeScreen> {
                                       },
                                     ),
                                   ),
-                                  DropdownButton<int>(
-                                    value: selectedCamera,
-                                    onChanged: (int? newCamera) {
-                                      if (newCamera == null ||
-                                          newCamera == selectedCamera) return;
-                                      selectedCamera = newCamera;
-                                      setState(() {
-                                        Vibration.vibrate(
-                                            amplitude: 255, duration: 5);
-                                        _controller = CameraController(
-                                            cameras[selectedCamera],
-                                            ResolutionPreset.max,
-                                            enableAudio: false);
-                                        _initializeControllerFuture =
-                                            _controller.initialize();
-                                      });
-                                    },
-                                    underline: Divider(
-                                        height: 0, color: Colors.transparent),
-                                    items: List.generate(cameras.length,
-                                        (cameraIndex) {
-                                      return DropdownMenuItem(
-                                          value: cameraIndex,
-                                          child:
-                                              Text(cameras[cameraIndex].name));
-                                    }),
-                                    icon: Container(
-                                      padding: EdgeInsets.all(8),
-                                      child: Icon(Icons.cameraswitch),
+                                  Container(
+                                    height: 40,
+                                    child: Row(
+                                      children: [
+                                        Slider(
+                                          value: _sliderValue,
+                                          min: _zoom2Slider(_minZoomLevel),
+                                          max: _zoom2Slider(_maxZoomLevel),
+                                          onChanged: (newValue) {
+                                            setState(() {
+                                              _controller.setZoomLevel(
+                                                  _slider2Zoom(newValue));
+                                              _sliderValue = newValue;
+                                            });
+                                          },
+                                        ),
+                                        DropdownButton<int>(
+                                          value: selectedCamera,
+                                          onChanged: (int? newCamera) {
+                                            if (newCamera == null ||
+                                                newCamera == selectedCamera)
+                                              return;
+                                            selectedCamera = newCamera;
+                                            setState(() {
+                                              Vibration.vibrate(
+                                                  amplitude: 255, duration: 5);
+                                              _controller = CameraController(
+                                                  cameras[selectedCamera],
+                                                  ResolutionPreset.max,
+                                                  enableAudio: false);
+
+                                              _initializeControllerFuture =
+                                                  _controller.initialize();
+                                            });
+                                            _resetZoomLevel();
+                                          },
+                                          underline: Divider(
+                                              height: 0,
+                                              color: Colors.transparent),
+                                          items: List.generate(cameras.length,
+                                              (cameraIndex) {
+                                            return DropdownMenuItem(
+                                                value: cameraIndex,
+                                                child: Text(
+                                                    cameras[cameraIndex].name));
+                                          }),
+                                          icon: Container(
+                                            padding: EdgeInsets.all(8),
+                                            child: Icon(Icons.cameraswitch),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
+                                  )
                                 ]);
                           } else {
                             // Otherwise, display a loading indicator.
@@ -308,6 +338,34 @@ class HomeScreenState extends State<HomeScreen> {
         );
       },
     );
+  }
+
+  double _zoom2Slider(double zoomValue) {
+    if (zoomValue >= 1) {
+      return zoomValue;
+    } else {
+      return 0 - (1 / zoomValue);
+    }
+  }
+
+  double _slider2Zoom(double sliderValue) {
+    if (sliderValue >= 0) {
+      return sliderValue;
+    } else {
+      return (1 / sliderValue) + 1;
+    }
+  }
+
+  Future<void> _resetZoomLevel() async {
+    await _controller.initialize();
+    double min = await _controller.getMinZoomLevel();
+    double max = await _controller.getMaxZoomLevel();
+
+    setState(() {
+      _minZoomLevel = min;
+      _maxZoomLevel = max;
+      _sliderValue = 1;
+    });
   }
 
   void _onCameraPreviewTap(PointerDownEvent event, BoxConstraints constraints) {
