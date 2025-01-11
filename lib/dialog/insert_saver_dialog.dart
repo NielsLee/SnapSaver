@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:path/path.dart';
@@ -29,7 +31,7 @@ class InsertSaverDialogState extends State<InsertSaverDialog> {
   // Indicates whether user has manually input path
   bool hasManuallyInputPath = false;
   // Color of the Saver button
-  Color? saverColor = null;
+  Color? saverColor = Colors.transparent;
   // Selected color index in color list
   int selectedColorIndex = -1;
 
@@ -192,6 +194,7 @@ class InsertSaverDialogState extends State<InsertSaverDialog> {
                           onPressed: () {
                             setState(() {
                               selectedColorIndex = colorEntry.key;
+                              saverColor = colorList[selectedColorIndex];
                             });
                           },
                           icon: Icon(Icons.folder, color: colorEntry.value),
@@ -202,59 +205,71 @@ class InsertSaverDialogState extends State<InsertSaverDialog> {
                 ),
               ),
               actions: <Widget>[
-                // More Button
-                TextButton(
-                  child: Text(AppLocalizations.of(context)!.more),
-                  onPressed: () async {
-                    Vibration.vibrate(amplitude: 255, duration: 5);
-                    var more = await _showMoreDialog();
-                    if (more != null) {
-                      dialogViewModel.setPhotoName(more.photoName);
-                      dialogViewModel.setSuffixType(more.suffixType);
-                      Fluttertoast.showToast(
-                        msg: AppLocalizations.of(context)!.moreDialogFinished,
-                        toastLength: Toast.LENGTH_SHORT,
-                        gravity: ToastGravity.BOTTOM,
-                        backgroundColor: Colors.white,
-                        textColor: Colors.black,
-                      );
-                    }
-                  },
-                ),
-
-                // cancel button
-                TextButton(
-                  child: Text(AppLocalizations.of(context)!.cancel),
-                  onPressed: () {
-                    Vibration.vibrate(amplitude: 255, duration: 5);
-                    Navigator.of(context).pop();
-                  },
-                ),
-
-                // ok button
-                TextButton(
-                  child: Text(AppLocalizations.of(context)!.ok),
-                  onPressed: () {
-                    Vibration.vibrate(amplitude: 255, duration: 5);
-                    String inputName = nameController.text;
-                    final inputPath = pathController.text;
-
-                    List<String?> avaliablePaths = pathSelectors.map(
-                      (selector) {
-                        if (selector.isPathSelected) return selector.path;
+                Row(
+                  children: [
+// More Button
+                    TextButton(
+                      child: Text(AppLocalizations.of(context)!.more),
+                      onPressed: () async {
+                        Vibration.vibrate(amplitude: 255, duration: 5);
+                        var more = await _showMoreDialog();
+                        if (more != null) {
+                          dialogViewModel.setPhotoName(more.photoName);
+                          dialogViewModel.setSuffixType(more.suffixType);
+                          Fluttertoast.showToast(
+                            msg: AppLocalizations.of(context)!
+                                .moreDialogFinished,
+                            toastLength: Toast.LENGTH_SHORT,
+                            gravity: ToastGravity.BOTTOM,
+                            backgroundColor: Colors.white,
+                            textColor: Colors.black,
+                          );
+                        }
                       },
-                    ).toList();
+                    ),
 
-                    if (inputName.isEmpty || avaliablePaths.isEmpty) {
-                      // no name or no path, do nothing
-                    } else {
-                      dialogViewModel.setName(inputName);
-                      if (selectedColorIndex >= 0) {
-                        dialogViewModel.setColor(colorList[selectedColorIndex]);
-                      }
-                      Navigator.of(context).pop(dialogViewModel);
-                    }
-                  },
+                    Spacer(),
+
+                    // cancel button
+                    TextButton(
+                      child: Text(AppLocalizations.of(context)!.cancel),
+                      onPressed: () {
+                        Vibration.vibrate(amplitude: 255, duration: 5);
+                        Navigator.of(context).pop();
+                      },
+                    ),
+
+                    // ok button
+                    TextButton(
+                      child: Text(AppLocalizations.of(context)!.ok),
+                      style: TextButton.styleFrom(backgroundColor: saverColor),
+                      onPressed: () {
+                        bool hasSelectedPath = false;
+                        Vibration.vibrate(amplitude: 255, duration: 5);
+                        String inputName = nameController.text;
+
+                        List<String?> avaliablePaths = pathSelectors.map(
+                          (selector) {
+                            if (selector.isPathSelected) {
+                              hasSelectedPath = true;
+                              return selector.path;
+                            }
+                          },
+                        ).toList();
+
+                        if (inputName.isEmpty || !hasSelectedPath) {
+                          // no name or no selected path, do nothing
+                        } else {
+                          dialogViewModel.setName(inputName);
+                          if (selectedColorIndex >= 0) {
+                            dialogViewModel
+                                .setColor(colorList[selectedColorIndex]);
+                          }
+                          Navigator.of(context).pop(dialogViewModel);
+                        }
+                      },
+                    ),
+                  ],
                 ),
               ],
             );
