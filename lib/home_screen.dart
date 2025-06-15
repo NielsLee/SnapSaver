@@ -12,6 +12,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:snap_saver/dialog/remove_saver_dialog.dart';
 import 'package:snap_saver/viewmodel/home_view_model.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:vibration/vibration.dart';
 import 'package:path/path.dart' as path;
 
@@ -32,22 +33,23 @@ class HomeScreenState extends State<HomeScreen> {
   bool isCapturing = false;
   Offset? focusOffset = null;
   double _sliderValue = 1;
+  ResolutionPreset resolution = ResolutionPreset.low; // default low
+  int currentResolution = 0;
 
   @override
   void initState() {
     super.initState();
 
-    _initCamera();
+    _initCamera(resolution);
   }
 
-  Future<void> _initCamera() async {
+  Future<void> _initCamera(ResolutionPreset resolution) async {
     WidgetsFlutterBinding.ensureInitialized();
 
     cameras = await availableCameras();
 
     await Permission.camera.request();
-    _controller = CameraController(
-        cameras[selectedCamera], ResolutionPreset.max,
+    _controller = CameraController(cameras[selectedCamera], resolution,
         enableAudio: false);
 
     _initializeControllerFuture = _controller.initialize();
@@ -79,129 +81,185 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    int newResolution = context.watch<HomeViewModel>().resolution;
+    if (newResolution != currentResolution) {
+      switch (context.watch<HomeViewModel>().resolution) {
+        case 0:
+          _initCamera(ResolutionPreset.low);
+        case 1:
+          _initCamera(ResolutionPreset.medium);
+        case 2:
+          _initCamera(ResolutionPreset.high);
+        case 3:
+          _initCamera(ResolutionPreset.veryHigh);
+        case 4:
+          _initCamera(ResolutionPreset.ultraHigh);
+        case 5:
+          _initCamera(ResolutionPreset.max);
+      }
+      currentResolution = newResolution;
+    }
+
     return Consumer<HomeViewModel>(
       builder: (BuildContext context, HomeViewModel viewModel, Widget? child) {
         final itemList = viewModel.savers;
-        final saversRowPadding = MediaQuery.of(context).size.width * 0.2;
+        final saversRowPadding = MediaQuery.of(context).size.width * 0.1;
         final ccontainerWidth = MediaQuery.of(context).size.width;
 
         return Column(
           children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              child: SizedBox(
-                  width: ccontainerWidth,
-                  child: AspectRatio(
-                      aspectRatio: context.watch<HomeViewModel>().aspectRatio,
-                      child: FutureBuilder<void>(
-                        future: _initializeControllerFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                                  ConnectionState.done &&
-                              !isCapturing) {
-                            return Stack(
-                                alignment: AlignmentDirectional.bottomCenter,
-                                children: <Widget>[
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(18),
-                                    child: LayoutBuilder(
-                                      builder: (BuildContext context,
-                                          BoxConstraints constraints) {
-                                        return Listener(
-                                          onPointerDown: (downEvent) {
-                                            _onCameraPreviewTap(
-                                                downEvent, constraints);
+            Expanded(
+              flex: (context.watch<HomeViewModel>().aspectRatio * 100).toInt(),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                child: SizedBox(
+                    width: ccontainerWidth,
+                    child: FutureBuilder<void>(
+                      future: _initializeControllerFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.done &&
+                            !isCapturing) {
+                          return Stack(
+                              alignment: AlignmentDirectional.bottomCenter,
+                              children: <Widget>[
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(18),
+                                  child: LayoutBuilder(
+                                    builder: (BuildContext context,
+                                        BoxConstraints constraints) {
+                                      return Listener(
+                                        onPointerDown: (downEvent) {
+                                          _onCameraPreviewTap(
+                                              downEvent, constraints);
+                                          setState(() {
+                                            focusOffset = Offset(
+                                                downEvent.localPosition.dx,
+                                                downEvent.localPosition.dy);
+                                          });
+                                          // delay 1 second and remove focus box
+                                          Timer(Duration(seconds: 1), () {
                                             setState(() {
-                                              focusOffset = Offset(
-                                                  downEvent.localPosition.dx,
-                                                  downEvent.localPosition.dy);
+                                              focusOffset = null;
                                             });
-                                            // delay 1 second and remove focus box
-                                            Timer(Duration(seconds: 1), () {
-                                              setState(() {
-                                                focusOffset = null;
-                                              });
-                                            });
-                                          },
-                                          child: Stack(
-                                            children: [
-                                              CameraPreview(_controller),
-                                              CustomPaint(
-                                                painter: FocusBoxPainter(
-                                                    focusOffset),
-                                              )
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                    ),
+                                          });
+                                        },
+                                        child: Stack(
+                                          children: [
+                                            CameraPreview(_controller),
+                                            CustomPaint(
+                                              painter:
+                                                  FocusBoxPainter(focusOffset),
+                                            )
+                                          ],
+                                        ),
+                                      );
+                                    },
                                   ),
-                                  Container(
-                                    height: 40,
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Slider(
-                                          value: _sliderValue,
-                                          min: _zoom2Slider(_minZoomLevel),
-                                          max: _zoom2Slider(_maxZoomLevel),
-                                          onChanged: (newValue) {
-                                            setState(() {
-                                              _controller.setZoomLevel(
-                                                  _slider2Zoom(newValue));
-                                              _sliderValue = newValue;
-                                            });
-                                          },
-                                        ),
-                                        DropdownButton<int>(
-                                          value: selectedCamera,
-                                          onChanged: (int? newCamera) {
-                                            if (newCamera == null ||
-                                                newCamera == selectedCamera)
-                                              return;
-                                            selectedCamera = newCamera;
-                                            setState(() {
-                                              Vibration.vibrate(
-                                                  amplitude: 255, duration: 5);
-                                              _controller = CameraController(
-                                                  cameras[selectedCamera],
-                                                  ResolutionPreset.max,
-                                                  enableAudio: false);
+                                ),
+                              ]);
+                        } else {
+                          // Otherwise, display a loading indicator.
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        }
+                      },
+                    )),
+              ),
+            ),
+            Container(
+              height: 40,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Slider(
+                    value: _sliderValue,
+                    min: _zoom2Slider(_minZoomLevel),
+                    max: _zoom2Slider(_maxZoomLevel),
+                    onChanged: (newValue) {
+                      setState(() {
+                        _controller.setZoomLevel(_slider2Zoom(newValue));
+                        _sliderValue = newValue;
+                      });
+                    },
+                  ),
+                  VerticalDivider(width: 12),
+                  DropdownButton<int>(
+                    value: context.watch<HomeViewModel>().resolution,
+                    onChanged: (int? newResolution) {
+                      if (newResolution == null ||
+                          newResolution == viewModel.resolution) return;
+                      Vibration.vibrate(amplitude: 255, duration: 5);
+                      context
+                          .read<HomeViewModel>()
+                          .updateResolution(newResolution);
+                    },
+                    underline: Divider(height: 0, color: Colors.transparent),
+                    items: [
+                      DropdownMenuItem(
+                          value: 0,
+                          child: Text(
+                              AppLocalizations.of(context)!.resolution_low)),
+                      DropdownMenuItem(
+                          value: 1,
+                          child: Text(
+                              AppLocalizations.of(context)!.resolution_medium)),
+                      DropdownMenuItem(
+                          value: 2,
+                          child: Text(
+                              AppLocalizations.of(context)!.resolution_high)),
+                      DropdownMenuItem(
+                          value: 3,
+                          child: Text(
+                              AppLocalizations.of(context)!.resolution_vh)),
+                      DropdownMenuItem(
+                          value: 4,
+                          child: Text(
+                              AppLocalizations.of(context)!.resolution_uh)),
+                      DropdownMenuItem(
+                          value: 5,
+                          child: Text(
+                              AppLocalizations.of(context)!.resolution_max)),
+                    ],
+                    icon: Container(
+                      padding: EdgeInsets.all(8),
+                      child: Icon(Icons.settings_overscan),
+                    ),
+                  ),
+                  VerticalDivider(width: 12),
+                  DropdownButton<int>(
+                    value: selectedCamera,
+                    onChanged: (int? newCamera) {
+                      if (newCamera == null || newCamera == selectedCamera)
+                        return;
+                      selectedCamera = newCamera;
+                      setState(() {
+                        Vibration.vibrate(amplitude: 255, duration: 5);
+                        _controller = CameraController(
+                            cameras[selectedCamera], ResolutionPreset.max,
+                            enableAudio: false);
 
-                                              _initializeControllerFuture =
-                                                  _controller.initialize();
-                                            });
-                                            _resetZoomLevel();
-                                          },
-                                          underline: Divider(
-                                              height: 0,
-                                              color: Colors.transparent),
-                                          items: List.generate(cameras.length,
-                                              (cameraIndex) {
-                                            return DropdownMenuItem(
-                                                value: cameraIndex,
-                                                child: Text(
-                                                    cameras[cameraIndex].name));
-                                          }),
-                                          icon: Container(
-                                            padding: EdgeInsets.all(8),
-                                            child: Icon(Icons.cameraswitch),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  )
-                                ]);
-                          } else {
-                            // Otherwise, display a loading indicator.
-                            return const Center(
-                                child: CircularProgressIndicator());
-                          }
-                        },
-                      ))),
+                        _initializeControllerFuture = _controller.initialize();
+                      });
+                      _resetZoomLevel();
+                    },
+                    underline: Divider(height: 0, color: Colors.transparent),
+                    items: List.generate(cameras.length, (cameraIndex) {
+                      return DropdownMenuItem(
+                          value: cameraIndex,
+                          child: Text(cameras[cameraIndex].name));
+                    }),
+                    icon: Container(
+                      padding: EdgeInsets.all(8),
+                      child: Icon(Icons.cameraswitch),
+                    ),
+                  ),
+                ],
+              ),
             ),
             Expanded(
+              flex: (100 - context.watch<HomeViewModel>().aspectRatio * 100)
+                  .toInt(),
+              child: Container(
                 child: MasonryGridView.builder(
                     padding: EdgeInsets.fromLTRB(
                         saversRowPadding, 0, saversRowPadding, 12),
@@ -211,9 +269,8 @@ class HomeScreenState extends State<HomeScreen> {
                         const SliverSimpleGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2),
                     itemBuilder: (context, index) {
-                      // TODO: get global color scheme from one place
                       ColorScheme saverColorScheme =
-                          ColorScheme.fromSeed(seedColor: Colors.green);
+                          ColorScheme.fromSeed(seedColor: viewModel.seedColor);
 
                       // generate Saver color scheme
                       if (itemList[index].color != null) {
@@ -235,8 +292,8 @@ class HomeScreenState extends State<HomeScreen> {
                           });
 
                           await Vibration.vibrate(amplitude: 255, duration: 5);
-                          await AudioPlayer()
-                              .play(AssetSource('sounds/camera_shutter.mp3'));
+                          // await AudioPlayer()
+                          //     .play(AssetSource('sounds/camera_shutter.mp3'));
                           final image = await _controller.takePicture();
 
                           setState(() {
@@ -336,7 +393,9 @@ class HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       );
-                    })),
+                    }),
+              ),
+            ),
           ],
         );
       },

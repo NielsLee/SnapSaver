@@ -29,5 +29,11 @@
     "moreDialogFinished": "PhotoName set successfully",
     "adjust_ratio": "Preview window ratio",
     "buy_me_coffee": "Buy author a coffee",
-    "color_scheme": "Color Scheme"
+    "color_scheme": "Color Scheme",
+    "resolution_low": "low",
+    "resolution_medium": "medium",
+    "resolution_high": "high",
+    "resolution_vh": "veryHigh",
+    "resolution_uh": "ultraHigh",
+    "resolution_max": "max"
 }

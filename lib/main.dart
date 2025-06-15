@@ -106,7 +106,7 @@ class MainScaffoldState extends State<MainScaffold> {
                                   return Slider(
                                     value: viewModel.aspectRatio,
                                     min: 0.5,
-                                    max: 1.25,
+                                    max: 0.9,
                                     onChanged: (value) async {
                                       await viewModel.updateAspectRatio(value);
                                     },

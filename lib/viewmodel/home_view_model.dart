@@ -9,20 +9,24 @@ class HomeViewModel extends ChangeNotifier {
   double _aspectRatio = 1.0;
   static const String _aspectRatioKey = 'aspect_ratio';
   Color _seedColor = Colors.green;
+  int _resolution = 0;
+  static const String _resolutionKey = 'resolution';
 
   HomeViewModel() {
     _initSavers();
     _loadAspectRatio();
     _loadSeedColor();
+    _loadResolution();
   }
 
   List<Saver> get savers => _saverList;
   double get aspectRatio => _aspectRatio;
   Color get seedColor => _seedColor;
+  int get resolution => _resolution;
 
   Future<void> _loadAspectRatio() async {
     final prefs = await SharedPreferences.getInstance();
-    _aspectRatio = prefs.getDouble(_aspectRatioKey) ?? 1.0;
+    _aspectRatio = prefs.getDouble(_aspectRatioKey) ?? 0.5;
     notifyListeners();
   }
 
@@ -44,6 +48,20 @@ class HomeViewModel extends ChangeNotifier {
     _seedColor = color;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('seed_color', color.value);
+    notifyListeners();
+  }
+
+  Future<void> _loadResolution() async {
+    final prefs = await SharedPreferences.getInstance();
+    _resolution = prefs.getInt(_resolutionKey) ?? 0;
+    notifyListeners();
+  }
+
+  Future<void> updateResolution(int value) async {
+    if (value < 0 || value > 5) return;
+    _resolution = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_resolutionKey, value);
     notifyListeners();
   }
 
