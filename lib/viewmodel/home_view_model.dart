@@ -2,15 +2,33 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:snap_saver/db/SaverDatabase.dart';
 import 'package:snap_saver/entity/saver.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeViewModel extends ChangeNotifier {
   final List<Saver> _saverList = [];
+  double _aspectRatio = 1.0;
+  static const String _aspectRatioKey = 'aspect_ratio';
 
   HomeViewModel() {
     _initSavers();
+    _loadAspectRatio();
   }
 
   List<Saver> get savers => _saverList;
+  double get aspectRatio => _aspectRatio;
+
+  Future<void> _loadAspectRatio() async {
+    final prefs = await SharedPreferences.getInstance();
+    _aspectRatio = prefs.getDouble(_aspectRatioKey) ?? 1.0;
+    notifyListeners();
+  }
+
+  Future<void> updateAspectRatio(double value) async {
+    _aspectRatio = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_aspectRatioKey, value);
+    notifyListeners();
+  }
 
   int addSaver(Saver newSaver, BuildContext context) {
     if (_saverList.map((e) => e.name).contains(newSaver.name)) {

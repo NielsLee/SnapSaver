@@ -9,7 +9,6 @@ import 'package:snap_saver/viewmodel/dialog_view_model.dart';
 import 'package:snap_saver/viewmodel/home_view_model.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:vibration/vibration.dart';
-import 'db/SaverDatabase.dart';
 import 'entity/saver.dart';
 import 'home_screen.dart';
 
@@ -82,6 +81,43 @@ class MainScaffoldState extends State<MainScaffold> {
           title: Text(AppLocalizations.of(context)!.appTitle),
           backgroundColor: colorScheme.primaryContainer,
           actions: [
+            IconButton(
+                onPressed: () {
+                  setState(() {
+                    _selectedIndex = 0;
+                  });
+                  Vibration.vibrate(amplitude: 255, duration: 5);
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text(AppLocalizations.of(context)!.adjust_ratio),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(children: [
+                              Icon(Icons.expand),
+                              Consumer<HomeViewModel>(
+                                builder: (context, viewModel, child) {
+                                  return Slider(
+                                    value: viewModel.aspectRatio,
+                                    min: 0.5,
+                                    max: 1.25,
+                                    onChanged: (value) async {
+                                      await viewModel.updateAspectRatio(value);
+                                    },
+                                  );
+                                },
+                              ),
+                              Icon(Icons.compress),
+                            ]),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+                icon: Icon(Icons.aspect_ratio)),
             IconButton(
                 onPressed: () {
                   Vibration.vibrate(amplitude: 255, duration: 5);

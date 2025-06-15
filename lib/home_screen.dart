@@ -83,15 +83,16 @@ class HomeScreenState extends State<HomeScreen> {
       builder: (BuildContext context, HomeViewModel viewModel, Widget? child) {
         final itemList = viewModel.savers;
         final saversRowPadding = MediaQuery.of(context).size.width * 0.2;
+        final ccontainerWidth = MediaQuery.of(context).size.width;
 
         return Column(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               child: SizedBox(
-                  width: 400,
+                  width: ccontainerWidth,
                   child: AspectRatio(
-                      aspectRatio: 3 / 4,
+                      aspectRatio: context.watch<HomeViewModel>().aspectRatio,
                       child: FutureBuilder<void>(
                         future: _initializeControllerFuture,
                         builder: (context, snapshot) {
@@ -138,6 +139,8 @@ class HomeScreenState extends State<HomeScreen> {
                                   Container(
                                     height: 40,
                                     child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Slider(
                                           value: _sliderValue,
