@@ -1,0 +1,2 @@
+Added the function of adjusting the preview window position
+Added the function of adjusting the APP color theme
