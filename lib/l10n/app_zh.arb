@@ -27,5 +27,7 @@
     "photoTimestamp": "时间",
     "photoNameExample": "照片名称示例",
     "moreDialogFinished": "照片名称设置完毕",
-    "adjust_ratio": "预览窗比例"
+    "adjust_ratio": "预览窗比例",
+    "buy_me_coffee": "买杯咖啡给作者",
+    "color_scheme": "颜色主题"
 }

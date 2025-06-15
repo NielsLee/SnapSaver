@@ -43,15 +43,21 @@ class MainApp extends StatefulWidget {
 }
 
 class MainAppState extends State<MainApp> {
-  ColorScheme colorScheme = ColorScheme.fromSeed(seedColor: Colors.green);
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      theme: ThemeData(colorScheme: colorScheme),
-      darkTheme: ThemeData(colorScheme: colorScheme),
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: context.watch<HomeViewModel>().seedColor,
+        ),
+      ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: context.watch<HomeViewModel>().seedColor,
+        ),
+      ),
       home: const MainScaffold(),
     );
   }
@@ -65,8 +71,6 @@ class MainScaffold extends StatefulWidget {
 }
 
 class MainScaffoldState extends State<MainScaffold> {
-  ColorScheme colorScheme = ColorScheme.fromSeed(seedColor: Colors.green);
-
   final List<Widget> _screens = [
     const HomeScreen(),
     const SettingsScreen(),
@@ -79,7 +83,7 @@ class MainScaffoldState extends State<MainScaffold> {
       return Scaffold(
         appBar: AppBar(
           title: Text(AppLocalizations.of(context)!.appTitle),
-          backgroundColor: colorScheme.primaryContainer,
+          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
           actions: [
             IconButton(
                 onPressed: () {

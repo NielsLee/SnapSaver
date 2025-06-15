@@ -1,7 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:provider/provider.dart';
+import 'package:vibration/vibration.dart';
+import 'package:snap_saver/viewmodel/home_view_model.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -12,6 +17,7 @@ class SettingsScreen extends StatefulWidget {
 
 class SettingsScreenState extends State<SettingsScreen> {
   bool isAddButtonShown = true;
+  bool isColorMenuExpanded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +58,65 @@ class SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
         ),
-        Divider()
+        Divider(height: 0),
+        Container(
+          padding: const EdgeInsets.all(8),
+          child: Row(
+            children: [
+              Padding(padding: EdgeInsets.fromLTRB(16, 0, 0, 0)),
+              Text(AppLocalizations.of(context)!.buy_me_coffee,
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const Spacer(),
+              IconButton(
+                  onPressed: () {
+                    _launchCoffee();
+                  },
+                  icon: const Icon(Icons.coffee))
+            ],
+          ),
+        ),
+        Divider(height: 0),
+        Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              child: Row(
+                children: [
+                  Padding(padding: EdgeInsets.fromLTRB(16, 0, 0, 0)),
+                  Text(AppLocalizations.of(context)!.color_scheme,
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Spacer(),
+                  IconButton(
+                      onPressed: () {
+                        setState(() {
+                          isColorMenuExpanded = !isColorMenuExpanded;
+                        });
+                      },
+                      icon: Icon(isColorMenuExpanded
+                          ? Icons.expand_less
+                          : Icons.expand_more))
+                ],
+              ),
+            ),
+            if (isColorMenuExpanded)
+              Container(
+                padding: const EdgeInsets.all(8),
+                child: Row(
+                  children: [
+                    Padding(padding: EdgeInsets.all(24)),
+                    _buildColorButton(Colors.red),
+                    _buildColorButton(Colors.orange),
+                    _buildColorButton(Colors.yellow),
+                    _buildColorButton(Colors.green),
+                    _buildColorButton(Colors.cyan),
+                    _buildColorButton(Colors.blue),
+                    _buildColorButton(Colors.purple),
+                  ],
+                ),
+              ),
+          ],
+        ),
+        Divider(height: 0),
       ],
     );
   }
@@ -101,5 +165,65 @@ class SettingsScreenState extends State<SettingsScreen> {
         textColor: Colors.black,
       );
     }
+  }
+
+  Future<void> _launchCoffee() async {
+    final Uri coffeeUrl = Uri(
+      scheme: 'https',
+      path: 'ko-fi.com/nielslee',
+    );
+
+    Fluttertoast.showToast(
+      msg: '😊Have a nice day!',
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.white,
+      textColor: Colors.black,
+    );
+
+    // await Future.delayed(Duration(milliseconds: 100));
+
+    Fluttertoast.showToast(
+      msg: '😊Have a nice day!',
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.CENTER,
+      backgroundColor: Colors.white,
+      textColor: Colors.black,
+    );
+
+    await launchUrl(coffeeUrl);
+  }
+
+  Widget _buildColorButton(Color color) {
+    return Consumer<HomeViewModel>(
+      builder: (context, viewModel, child) {
+        final isSelected = viewModel.seedColor.value == color.value;
+        return GestureDetector(
+          onTap: () {
+            viewModel.updateSeedColor(color);
+            Vibration.vibrate(amplitude: 255, duration: 5);
+          },
+          child: Container(
+            width: 48,
+            height: 36,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isSelected ? Colors.white : Colors.transparent,
+                width: 4,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }

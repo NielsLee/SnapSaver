@@ -12,7 +12,7 @@
     "cancel": "Cancel",
     "preview": "Preview",
     "importAllExistingAlbums": "Import all existing albums",
-    "contactDeveloper": "Contact developer",
+    "contactDeveloper": "Contact author",
     "browseSourceCode": "Browse source code",
     "notYetImplemented": "Not yet implemented",
     "saverPathExisted": "❌Saver with this path already existed",
@@ -27,5 +27,7 @@
     "photoTimestamp": "Time",
     "photoNameExample": "PhotoName Example",
     "moreDialogFinished": "PhotoName set successfully",
-    "adjust_ratio": "Preview window ratio"
+    "adjust_ratio": "Preview window ratio",
+    "buy_me_coffee": "Buy author a coffee",
+    "color_scheme": "Color Scheme"
 }
