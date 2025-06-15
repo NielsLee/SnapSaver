@@ -24,7 +24,7 @@ if (flutterVersionName == null) {
 
 android {
     namespace "lying.fengfeng.snapsaver.snap_saver"
-    compileSdk 34
+    compileSdkVersion 34
     ndkVersion flutter.ndkVersion
 
     compileOptions {
@@ -34,6 +34,7 @@ android {
 
     kotlinOptions {
         jvmTarget = '1.8'
+        freeCompilerArgs += ['-Xjvm-default=all']
     }
 
     sourceSets {
@@ -42,9 +43,8 @@ android {
 
     defaultConfig {
         applicationId "lying.fengfeng.snapsaver"
-
         minSdkVersion 21
-        targetSdkVersion flutter.targetSdkVersion
+        targetSdkVersion 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
