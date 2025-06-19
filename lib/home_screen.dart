@@ -166,96 +166,109 @@ class HomeScreenState extends State<HomeScreen> {
                     )),
               ),
             ),
-            Container(
-              height: 40,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Slider(
-                    value: _sliderValue,
-                    min: _zoom2Slider(_minZoomLevel),
-                    max: _zoom2Slider(_maxZoomLevel),
-                    onChanged: (newValue) {
-                      setState(() {
-                        _controller.setZoomLevel(_slider2Zoom(newValue));
-                        _sliderValue = newValue;
-                      });
-                    },
-                  ),
-                  VerticalDivider(width: 12),
-                  DropdownButton<int>(
-                    value: context.watch<HomeViewModel>().resolution,
-                    onChanged: (int? newResolution) {
-                      if (newResolution == null ||
-                          newResolution == viewModel.resolution) return;
-                      Vibration.vibrate(amplitude: 255, duration: 5);
-                      context
-                          .read<HomeViewModel>()
-                          .updateResolution(newResolution);
-                    },
-                    underline: Divider(height: 0, color: Colors.transparent),
-                    items: [
-                      DropdownMenuItem(
-                          value: 0,
-                          child: Text(
-                              AppLocalizations.of(context)!.resolution_low)),
-                      DropdownMenuItem(
-                          value: 1,
-                          child: Text(
-                              AppLocalizations.of(context)!.resolution_medium)),
-                      DropdownMenuItem(
-                          value: 2,
-                          child: Text(
-                              AppLocalizations.of(context)!.resolution_high)),
-                      DropdownMenuItem(
-                          value: 3,
-                          child: Text(
-                              AppLocalizations.of(context)!.resolution_vh)),
-                      DropdownMenuItem(
-                          value: 4,
-                          child: Text(
-                              AppLocalizations.of(context)!.resolution_uh)),
-                      DropdownMenuItem(
-                          value: 5,
-                          child: Text(
-                              AppLocalizations.of(context)!.resolution_max)),
-                    ],
-                    icon: Container(
-                      padding: EdgeInsets.all(8),
-                      child: Icon(Icons.settings_overscan),
-                    ),
-                  ),
-                  VerticalDivider(width: 12),
-                  DropdownButton<int>(
-                    value: selectedCamera,
-                    onChanged: (int? newCamera) {
-                      if (newCamera == null || newCamera == selectedCamera)
-                        return;
-                      selectedCamera = newCamera;
-                      setState(() {
-                        Vibration.vibrate(amplitude: 255, duration: 5);
-                        _controller = CameraController(
-                            cameras[selectedCamera], ResolutionPreset.max,
-                            enableAudio: false);
+            FutureBuilder(
+                future: _initializeControllerFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.done) {
+                    return Container(
+                      height: 40,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Slider(
+                            value: _sliderValue,
+                            min: _zoom2Slider(_minZoomLevel),
+                            max: _zoom2Slider(_maxZoomLevel),
+                            onChanged: (newValue) {
+                              setState(() {
+                                _controller
+                                    .setZoomLevel(_slider2Zoom(newValue));
+                                _sliderValue = newValue;
+                              });
+                            },
+                          ),
+                          VerticalDivider(width: 12),
+                          DropdownButton<int>(
+                            value: context.watch<HomeViewModel>().resolution,
+                            onChanged: (int? newResolution) {
+                              if (newResolution == null ||
+                                  newResolution == viewModel.resolution) return;
+                              Vibration.vibrate(amplitude: 255, duration: 5);
+                              context
+                                  .read<HomeViewModel>()
+                                  .updateResolution(newResolution);
+                            },
+                            underline:
+                                Divider(height: 0, color: Colors.transparent),
+                            items: [
+                              DropdownMenuItem(
+                                  value: 0,
+                                  child: Text(AppLocalizations.of(context)!
+                                      .resolution_low)),
+                              DropdownMenuItem(
+                                  value: 1,
+                                  child: Text(AppLocalizations.of(context)!
+                                      .resolution_medium)),
+                              DropdownMenuItem(
+                                  value: 2,
+                                  child: Text(AppLocalizations.of(context)!
+                                      .resolution_high)),
+                              DropdownMenuItem(
+                                  value: 3,
+                                  child: Text(AppLocalizations.of(context)!
+                                      .resolution_vh)),
+                              DropdownMenuItem(
+                                  value: 4,
+                                  child: Text(AppLocalizations.of(context)!
+                                      .resolution_uh)),
+                              DropdownMenuItem(
+                                  value: 5,
+                                  child: Text(AppLocalizations.of(context)!
+                                      .resolution_max)),
+                            ],
+                            icon: Container(
+                              padding: EdgeInsets.all(8),
+                              child: Icon(Icons.settings_overscan),
+                            ),
+                          ),
+                          VerticalDivider(width: 12),
+                          DropdownButton<int>(
+                            value: selectedCamera,
+                            onChanged: (int? newCamera) {
+                              if (newCamera == null ||
+                                  newCamera == selectedCamera) return;
+                              selectedCamera = newCamera;
+                              setState(() {
+                                Vibration.vibrate(amplitude: 255, duration: 5);
+                                _controller = CameraController(
+                                    cameras[selectedCamera],
+                                    ResolutionPreset.max,
+                                    enableAudio: false);
 
-                        _initializeControllerFuture = _controller.initialize();
-                      });
-                      _resetZoomLevel();
-                    },
-                    underline: Divider(height: 0, color: Colors.transparent),
-                    items: List.generate(cameras.length, (cameraIndex) {
-                      return DropdownMenuItem(
-                          value: cameraIndex,
-                          child: Text(cameras[cameraIndex].name));
-                    }),
-                    icon: Container(
-                      padding: EdgeInsets.all(8),
-                      child: Icon(Icons.cameraswitch),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                                _initializeControllerFuture =
+                                    _controller.initialize();
+                              });
+                              _resetZoomLevel();
+                            },
+                            underline:
+                                Divider(height: 0, color: Colors.transparent),
+                            items: List.generate(cameras.length, (cameraIndex) {
+                              return DropdownMenuItem(
+                                  value: cameraIndex,
+                                  child: Text(cameras[cameraIndex].name));
+                            }),
+                            icon: Container(
+                              padding: EdgeInsets.all(8),
+                              child: Icon(Icons.cameraswitch),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  } else {
+                    return Container(height: 40);
+                  }
+                }),
             Expanded(
               flex: (100 - context.watch<HomeViewModel>().aspectRatio * 100)
                   .toInt(),
@@ -292,8 +305,8 @@ class HomeScreenState extends State<HomeScreen> {
                           });
 
                           await Vibration.vibrate(amplitude: 255, duration: 5);
-                          // await AudioPlayer()
-                          //     .play(AssetSource('sounds/camera_shutter.mp3'));
+                          await AudioPlayer()
+                              .play(AssetSource('sounds/camera_shutter.mp3'));
                           final image = await _controller.takePicture();
 
                           setState(() {
