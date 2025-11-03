@@ -35,7 +35,7 @@ class HomeScreenState extends State<HomeScreen> {
   bool isCapturing = false;
   Offset? focusOffset = null;
   double _sliderValue = 1;
-  ResolutionPreset currentResolution = ResolutionPreset.low; // default low
+  ResolutionPreset currentResolution = ResolutionPreset.max; // default max
   int currentResolutionIndex = 0;
   var currentLensDirection = CameraLensDirection.back;
 
