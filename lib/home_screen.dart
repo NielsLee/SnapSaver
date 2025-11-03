@@ -12,9 +12,11 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:snap_saver/dialog/remove_saver_dialog.dart';
 import 'package:snap_saver/viewmodel/home_view_model.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:vibration/vibration.dart';
 import 'package:path/path.dart' as path;
+import 'package:image/image.dart' as img;
+
+import 'entity/saver.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,7 +27,7 @@ class HomeScreen extends StatefulWidget {
 
 class HomeScreenState extends State<HomeScreen> {
   late List<CameraDescription> cameras;
-  late int selectedCamera = 0;
+  late int selectedLensIndex = 0;
   late CameraController _controller;
   double _minZoomLevel = 1 / 2;
   double _maxZoomLevel = 3;
@@ -33,23 +35,23 @@ class HomeScreenState extends State<HomeScreen> {
   bool isCapturing = false;
   Offset? focusOffset = null;
   double _sliderValue = 1;
-  ResolutionPreset resolution = ResolutionPreset.low; // default low
-  int currentResolution = 0;
+  ResolutionPreset currentResolution = ResolutionPreset.low; // default low
+  int currentResolutionIndex = 0;
+  var currentLensDirection = CameraLensDirection.back;
 
   @override
   void initState() {
     super.initState();
 
-    _initCamera(resolution);
+    _initCamera(currentResolution);
   }
 
   Future<void> _initCamera(ResolutionPreset resolution) async {
     WidgetsFlutterBinding.ensureInitialized();
 
     cameras = await availableCameras();
-
     await Permission.camera.request();
-    _controller = CameraController(cameras[selectedCamera], resolution,
+    _controller = CameraController(cameras[selectedLensIndex], resolution,
         enableAudio: false);
 
     _initializeControllerFuture = _controller.initialize();
@@ -82,7 +84,7 @@ class HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     int newResolution = context.watch<HomeViewModel>().resolution;
-    if (newResolution != currentResolution) {
+    if (newResolution != currentResolutionIndex) {
       switch (context.watch<HomeViewModel>().resolution) {
         case 0:
           _initCamera(ResolutionPreset.low);
@@ -97,73 +99,132 @@ class HomeScreenState extends State<HomeScreen> {
         case 5:
           _initCamera(ResolutionPreset.max);
       }
-      currentResolution = newResolution;
+      currentResolutionIndex = newResolution;
     }
 
     return Consumer<HomeViewModel>(
       builder: (BuildContext context, HomeViewModel viewModel, Widget? child) {
         final itemList = viewModel.savers;
         final saversRowPadding = MediaQuery.of(context).size.width * 0.1;
-        final ccontainerWidth = MediaQuery.of(context).size.width;
 
         return Column(
           children: [
-            Expanded(
-              flex: (context.watch<HomeViewModel>().aspectRatio * 100).toInt(),
+            AspectRatio(
+              aspectRatio: 3 / 4,
               child: Container(
-                padding: const EdgeInsets.all(12),
-                child: SizedBox(
-                    width: ccontainerWidth,
-                    child: FutureBuilder<void>(
-                      future: _initializeControllerFuture,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.done &&
-                            !isCapturing) {
+                padding: const EdgeInsets.all(4),
+                child: FutureBuilder<void>(
+                  future: _initializeControllerFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.done &&
+                        !isCapturing) {
+                      return LayoutBuilder(
+                        builder:
+                            (BuildContext context, BoxConstraints constraints) {
                           return Stack(
-                              alignment: AlignmentDirectional.bottomCenter,
-                              children: <Widget>[
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(18),
-                                  child: LayoutBuilder(
-                                    builder: (BuildContext context,
-                                        BoxConstraints constraints) {
-                                      return Listener(
-                                        onPointerDown: (downEvent) {
-                                          _onCameraPreviewTap(
-                                              downEvent, constraints);
-                                          setState(() {
-                                            focusOffset = Offset(
-                                                downEvent.localPosition.dx,
-                                                downEvent.localPosition.dy);
-                                          });
-                                          // delay 1 second and remove focus box
-                                          Timer(Duration(seconds: 1), () {
-                                            setState(() {
-                                              focusOffset = null;
-                                            });
-                                          });
+                            alignment: AlignmentDirectional.bottomCenter,
+                            children: <Widget>[
+                              // 使用裁剪方式：保持宽度不变，高度对称裁剪
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: SizedBox(
+                                  width: constraints.maxWidth,
+                                  height: constraints.maxWidth * 4 / 3,
+                                  child: ClipRect(
+                                    child: Align(
+                                      alignment: Alignment.center,
+                                      child: Builder(
+                                        builder: (context) {
+                                          // 获取相机预览的实际尺寸
+                                          final previewSize =
+                                              _controller.value.previewSize;
+                                          if (previewSize == null ||
+                                              previewSize.height == 0) {
+                                            return Center(
+                                                child:
+                                                    CircularProgressIndicator());
+                                          }
+
+                                          // 计算相机预览的实际宽高比
+                                          final previewAspectRatio =
+                                              previewSize.height /
+                                                  previewSize.width;
+
+                                          // 目标宽度
+                                          final targetWidth =
+                                              constraints.maxWidth;
+
+                                          // 使用 AspectRatio 让 CameraPreview 按原始比例显示
+                                          // 然后用 Transform.scale 等比例放大，使宽度等于目标宽度
+                                          // 使用较小的基准宽度，让 AspectRatio 有约束可计算
+                                          final baseWidth = 100.0;
+
+                                          // 计算缩放比例，使放大后的宽度等于目标宽度
+                                          final scale = targetWidth / baseWidth;
+
+                                          return Center(
+                                            child: Transform.scale(
+                                              scale: scale,
+                                              alignment: Alignment.center,
+                                              child: SizedBox(
+                                                width: baseWidth,
+                                                child: AspectRatio(
+                                                  aspectRatio:
+                                                      previewAspectRatio,
+                                                  child: CameraPreview(
+                                                      _controller),
+                                                ),
+                                              ),
+                                            ),
+                                          );
                                         },
-                                        child: Stack(
-                                          children: [
-                                            CameraPreview(_controller),
-                                            CustomPaint(
-                                              painter:
-                                                  FocusBoxPainter(focusOffset),
-                                            )
-                                          ],
-                                        ),
-                                      );
-                                    },
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ]);
-                        } else {
-                          // Otherwise, display a loading indicator.
-                          return const Center(
-                              child: CircularProgressIndicator());
-                        }
-                      },
-                    )),
+                              ),
+                              // 添加触摸监听层
+                              Positioned.fill(
+                                child: Listener(
+                                  onPointerDown: (downEvent) {
+                                    _onCameraPreviewTap(downEvent, constraints);
+                                    setState(() {
+                                      focusOffset = Offset(
+                                        downEvent.localPosition.dx,
+                                        downEvent.localPosition.dy,
+                                      );
+                                    });
+                                    // delay 1 second and remove focus box
+                                    Timer(Duration(seconds: 1), () {
+                                      setState(() {
+                                        focusOffset = null;
+                                      });
+                                    });
+                                  },
+                                  behavior: HitTestBehavior.translucent,
+                                  child: Container(
+                                    color: Colors.transparent,
+                                  ),
+                                ),
+                              ),
+                              // 对焦框绘制层（放在最上层，确保显示）
+                              Positioned.fill(
+                                child: IgnorePointer(
+                                  child: CustomPaint(
+                                    painter: FocusBoxPainter(focusOffset),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    } else {
+                      // Otherwise, display a loading indicator.
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                  },
+                ),
               ),
             ),
             FutureBuilder(
@@ -175,6 +236,9 @@ class HomeScreenState extends State<HomeScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
+                          Container(
+                            width: 12,
+                          ),
                           Slider(
                             value: _sliderValue,
                             min: _zoom2Slider(_minZoomLevel),
@@ -187,81 +251,35 @@ class HomeScreenState extends State<HomeScreen> {
                               });
                             },
                           ),
-                          VerticalDivider(width: 12),
-                          DropdownButton<int>(
-                            value: context.watch<HomeViewModel>().resolution,
-                            onChanged: (int? newResolution) {
-                              if (newResolution == null ||
-                                  newResolution == viewModel.resolution) return;
-                              Vibration.vibrate(amplitude: 255, duration: 5);
-                              context
-                                  .read<HomeViewModel>()
-                                  .updateResolution(newResolution);
-                            },
-                            underline:
-                                Divider(height: 0, color: Colors.transparent),
-                            items: [
-                              DropdownMenuItem(
-                                  value: 0,
-                                  child: Text(AppLocalizations.of(context)!
-                                      .resolution_low)),
-                              DropdownMenuItem(
-                                  value: 1,
-                                  child: Text(AppLocalizations.of(context)!
-                                      .resolution_medium)),
-                              DropdownMenuItem(
-                                  value: 2,
-                                  child: Text(AppLocalizations.of(context)!
-                                      .resolution_high)),
-                              DropdownMenuItem(
-                                  value: 3,
-                                  child: Text(AppLocalizations.of(context)!
-                                      .resolution_vh)),
-                              DropdownMenuItem(
-                                  value: 4,
-                                  child: Text(AppLocalizations.of(context)!
-                                      .resolution_uh)),
-                              DropdownMenuItem(
-                                  value: 5,
-                                  child: Text(AppLocalizations.of(context)!
-                                      .resolution_max)),
-                            ],
-                            icon: Container(
-                              padding: EdgeInsets.all(8),
-                              child: Icon(Icons.settings_overscan),
-                            ),
-                          ),
-                          VerticalDivider(width: 12),
-                          DropdownButton<int>(
-                            value: selectedCamera,
-                            onChanged: (int? newCamera) {
-                              if (newCamera == null ||
-                                  newCamera == selectedCamera) return;
-                              selectedCamera = newCamera;
-                              setState(() {
-                                Vibration.vibrate(amplitude: 255, duration: 5);
-                                _controller = CameraController(
-                                    cameras[selectedCamera],
-                                    ResolutionPreset.max,
-                                    enableAudio: false);
+                          Spacer(),
+                          IconButton(
+                              onPressed: () {
+                                if (currentLensDirection ==
+                                    CameraLensDirection.back) {
+                                  currentLensDirection =
+                                      CameraLensDirection.front;
+                                } else {
+                                  currentLensDirection =
+                                      CameraLensDirection.back;
+                                }
 
-                                _initializeControllerFuture =
-                                    _controller.initialize();
-                              });
-                              _resetZoomLevel();
-                            },
-                            underline:
-                                Divider(height: 0, color: Colors.transparent),
-                            items: List.generate(cameras.length, (cameraIndex) {
-                              return DropdownMenuItem(
-                                  value: cameraIndex,
-                                  child: Text(cameras[cameraIndex].name));
-                            }),
-                            icon: Container(
-                              padding: EdgeInsets.all(8),
-                              child: Icon(Icons.cameraswitch),
-                            ),
-                          ),
+                                for (var (lensIndex, cameraLens)
+                                    in cameras.indexed) {
+                                  if (cameraLens.lensDirection ==
+                                      currentLensDirection) {
+                                    setState(() {
+                                      Vibration.vibrate(
+                                          amplitude: 255, duration: 5);
+                                      selectedLensIndex = lensIndex;
+                                      _initCamera(currentResolution);
+                                    });
+                                  }
+                                }
+                              },
+                              icon: Icon(Icons.cameraswitch)),
+                          Container(
+                            width: 12,
+                          )
                         ],
                       ),
                     );
@@ -270,144 +288,103 @@ class HomeScreenState extends State<HomeScreen> {
                   }
                 }),
             Expanded(
-              flex: (100 - context.watch<HomeViewModel>().aspectRatio * 100)
-                  .toInt(),
-              child: Container(
-                child: MasonryGridView.builder(
-                    padding: EdgeInsets.fromLTRB(
-                        saversRowPadding, 0, saversRowPadding, 12),
-                    itemCount: itemList.length,
-                    scrollDirection: Axis.horizontal,
-                    gridDelegate:
-                        const SliverSimpleGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2),
-                    itemBuilder: (context, index) {
-                      ColorScheme saverColorScheme =
-                          ColorScheme.fromSeed(seedColor: viewModel.seedColor);
+              child: MasonryGridView.builder(
+                  padding: EdgeInsets.fromLTRB(
+                      saversRowPadding, 0, saversRowPadding, 12),
+                  itemCount: itemList.length,
+                  scrollDirection: Axis.horizontal,
+                  gridDelegate:
+                      const SliverSimpleGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2),
+                  itemBuilder: (context, index) {
+                    ColorScheme saverColorScheme =
+                        ColorScheme.fromSeed(seedColor: viewModel.seedColor);
 
-                      // generate Saver color scheme
-                      if (itemList[index].color != null) {
-                        saverColorScheme = ColorScheme.fromSeed(
-                            seedColor: Color(itemList[index].color!));
+                    // generate Saver color scheme
+                    if (itemList[index].color != null) {
+                      saverColorScheme = ColorScheme.fromSeed(
+                          seedColor: Color(itemList[index].color!));
+                    }
+
+                    // Function for taking photos
+                    Future<void> _takePhotos() async {
+                      if (isCapturing) {
+                        // if is capturing, skip
+                        return;
                       }
+                      try {
+                        await _initializeControllerFuture;
 
-                      // Function for taking photos
-                      Future<void> _takePhotos() async {
-                        if (isCapturing) {
-                          // if is capturing, skip
-                          return;
-                        }
-                        try {
-                          await _initializeControllerFuture;
+                        setState(() {
+                          isCapturing = true;
+                        });
 
-                          setState(() {
-                            isCapturing = true;
-                          });
+                        await Vibration.vibrate(amplitude: 255, duration: 5);
+                        await AudioPlayer()
+                            .play(AssetSource('sounds/camera_shutter.mp3'));
+                        final image = await _controller.takePicture();
+                        debugPrint(
+                            "take photo result: path: ${image.path} name: ${image.name}");
 
-                          await Vibration.vibrate(amplitude: 255, duration: 5);
-                          await AudioPlayer()
-                              .play(AssetSource('sounds/camera_shutter.mp3'));
-                          final image = await _controller.takePicture();
+                        setState(() {
+                          isCapturing = false;
+                        });
 
-                          setState(() {
-                            isCapturing = false;
-                          });
+                        _requestStoragePermission();
 
-                          _requestStoragePermission();
+                        // TODO add a progress animate in Saver button
+                        final saver = itemList[index];
+                        final paths = saver.paths;
 
-                          // TODO add a progress animate in Saver button
-                          final saver = itemList[index];
-                          final paths = saver.paths;
-                          var newName = saver.photoName;
+                        final prefixedFileName = getPrefixedFileName(saver);
+                        await handleFileAspectRatio(image);
+                        await moveXFileToFile(image, paths, prefixedFileName);
 
-                          if (newName != null) {
-                            switch (saver.suffixType) {
-                              case 0:
-                                {
-                                  newName = newName + saver.count.toString();
-                                }
-                              case 1:
-                                {
-                                  DateTime now = DateTime.now();
-                                  String nowStr =
-                                      DateFormat('yyyyMMddHHmmss').format(now);
-                                  newName += nowStr;
-                                }
-                              case 2:
-                                {
-                                  newName =
-                                      newName + '_' + saver.count.toString();
-                                }
-                              case 3:
-                                {
-                                  DateTime now = DateTime.now();
-                                  String nowStr =
-                                      DateFormat('yyyyMMddHHmmss').format(now);
-                                  newName += '_' + nowStr;
-                                }
-                              case 4:
-                                {
-                                  newName =
-                                      newName + '-' + saver.count.toString();
-                                }
-                              case 5:
-                                {
-                                  DateTime now = DateTime.now();
-                                  String nowStr =
-                                      DateFormat('yyyyMMddHHmmss').format(now);
-                                  newName += '-' + nowStr;
-                                }
-                            }
-                          }
-                          await moveXFileToFile(image, paths, newName);
+                        saver.count++;
+                        viewModel.updateSaver(saver);
 
-                          saver.count++;
-                          viewModel.updateSaver(saver);
-
-                          if (!context.mounted) return;
-                        } catch (e) {
-                          log(e.toString());
-                        }
+                        if (!context.mounted) return;
+                      } catch (e) {
+                        log(e.toString());
                       }
+                    }
 
-                      Future<bool?> _showRemoveDialog() async {
-                        return showGeneralDialog<bool?>(
-                          context: context,
-                          barrierDismissible: true,
-                          barrierLabel: "Remove Saver Dialog",
-                          pageBuilder: (BuildContext context, anim1, anmi2) {
-                            return RemoveSaverDialog(saver: itemList[index]);
-                          },
-                        );
-                      }
-
-                      // Saver button
-                      return Container(
-                        margin: const EdgeInsets.all(4),
-                        child: ElevatedButton(
-                          onLongPress: () async {
-                            final remove = await _showRemoveDialog();
-                            if (remove == true) {
-                              viewModel.removeSaver(itemList[index]);
-                            }
-                          },
-                          onPressed: _takePhotos,
-                          child: Badge(
-                              isLabelVisible:
-                                  (itemList[index].suffixType % 2 == 0),
-                              backgroundColor: Colors.deepOrange,
-                              offset: Offset(16, -16),
-                              label: Text(itemList[index].count.toString()),
-                              child: Text(itemList[index].name)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: saverColorScheme.primaryContainer,
-                            foregroundColor:
-                                saverColorScheme.onPrimaryContainer,
-                          ),
-                        ),
+                    Future<bool?> _showRemoveDialog() async {
+                      return showGeneralDialog<bool?>(
+                        context: context,
+                        barrierDismissible: true,
+                        barrierLabel: "Remove Saver Dialog",
+                        pageBuilder: (BuildContext context, anim1, anmi2) {
+                          return RemoveSaverDialog(saver: itemList[index]);
+                        },
                       );
-                    }),
-              ),
+                    }
+
+                    // Saver button
+                    return Container(
+                      margin: const EdgeInsets.all(4),
+                      child: ElevatedButton(
+                        onLongPress: () async {
+                          final remove = await _showRemoveDialog();
+                          if (remove == true) {
+                            viewModel.removeSaver(itemList[index]);
+                          }
+                        },
+                        onPressed: _takePhotos,
+                        child: Badge(
+                            isLabelVisible:
+                                (itemList[index].suffixType % 2 == 0),
+                            backgroundColor: Colors.deepOrange,
+                            offset: Offset(16, -16),
+                            label: Text(itemList[index].count.toString()),
+                            child: Text(itemList[index].name)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: saverColorScheme.primaryContainer,
+                          foregroundColor: saverColorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    );
+                  }),
             ),
           ],
         );
@@ -446,8 +423,111 @@ class HomeScreenState extends State<HomeScreen> {
   void _onCameraPreviewTap(PointerDownEvent event, BoxConstraints constraints) {
     final x = event.localPosition.dx / constraints.maxWidth;
     final y = event.localPosition.dy / constraints.maxHeight;
+    debugPrint("onCameraPreviewTap: x: ${x}, y: ${y}");
 
     _controller.setFocusPoint(Offset(x, y));
+  }
+}
+
+String? getPrefixedFileName(Saver saver) {
+  var newName = saver.photoName;
+  if (newName != null) {
+    switch (saver.suffixType) {
+      case 0:
+        {
+          newName = newName + saver.count.toString();
+        }
+      case 1:
+        {
+          DateTime now = DateTime.now();
+          String nowStr = DateFormat('yyyyMMddHHmmss').format(now);
+          newName += nowStr;
+        }
+      case 2:
+        {
+          newName = newName + '_' + saver.count.toString();
+        }
+      case 3:
+        {
+          DateTime now = DateTime.now();
+          String nowStr = DateFormat('yyyyMMddHHmmss').format(now);
+          newName += '_' + nowStr;
+        }
+      case 4:
+        {
+          newName = newName + '-' + saver.count.toString();
+        }
+      case 5:
+        {
+          DateTime now = DateTime.now();
+          String nowStr = DateFormat('yyyyMMddHHmmss').format(now);
+          newName += '-' + nowStr;
+        }
+    }
+  }
+  return newName;
+}
+
+/**
+ * 裁剪图片到3:4比例
+ */
+Future<bool> handleFileAspectRatio(XFile imageFile) async {
+  try {
+    // 读取图片字节
+    final bytes = await imageFile.readAsBytes();
+    final image = img.decodeImage(bytes);
+    if (image == null) {
+      debugPrint('无法解析图片内容');
+      return false;
+    }
+    final int width = image.width;
+    final int height = image.height;
+
+    // 若宽高比已为3:4, 不处理
+    if ((width * 4).toDouble() == (height * 3).toDouble() ||
+        (width / height - 0.75).abs() < 0.01) {
+      // 3:4 比例
+      return true;
+    }
+
+    // 计算目标高度
+    int targetHeight = (width * 4 / 3).round();
+
+    // 如果实际高度小于目标高度, 则不能裁剪
+    if (height < targetHeight) {
+      debugPrint('图片高度不足以裁剪为3:4, 跳过');
+      return false;
+    }
+
+    // 取中间部分
+    int offsetY = ((height - targetHeight) / 2).round();
+
+    // 裁剪图片
+    final cropped = img.copyCrop(
+      image,
+      x: 0,
+      y: offsetY,
+      width: width,
+      height: targetHeight,
+    );
+
+    // 重新保存图片（覆盖原文件）
+    final extension = path.extension(imageFile.path).toLowerCase();
+    List<int> encodedBytes;
+    if (extension == ".png") {
+      encodedBytes = img.encodePng(cropped);
+    } else {
+      // 默认jpg
+      encodedBytes = img.encodeJpg(cropped);
+    }
+    final file = File(imageFile.path);
+    await file.writeAsBytes(encodedBytes, flush: true);
+
+    debugPrint('handleFileAspectRatio success: ${imageFile.path}');
+    return true;
+  } catch (e) {
+    debugPrint('handleFileAspectRatio error: $e');
+    return false;
   }
 }
 
@@ -473,7 +553,7 @@ Future<bool> moveXFileToFile(
     }
   } catch (e) {
     isSucceed = false;
-    log('Error moving file: $e');
+    debugPrint('Error moving file: $e');
   } finally {
     await sourceFile.delete();
   }

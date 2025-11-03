@@ -24,7 +24,7 @@ if (flutterVersionName == null) {
 
 android {
     namespace "lying.fengfeng.snapsaver.snap_saver"
-    compileSdkVersion 34
+    compileSdkVersion 35
     ndkVersion flutter.ndkVersion
 
     compileOptions {

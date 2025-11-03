@@ -51,6 +51,7 @@ dependencies:
   intl: any
   fluttertoast: ^8.2.5
   permission_handler: ^11.3.1
+  image: ^4.2.0
 
 dev_dependencies:
   flutter_test:

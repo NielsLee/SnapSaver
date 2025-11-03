@@ -4,6 +4,10 @@
 <dict>
     <key>NSCameraUsageDescription</key>
     <string>Explanation on why the camera access is needed.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+    <string>Explanation on why the NSPhotoLibraryAddUsageDescription access is needed.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>需要访问您的相册以选择照片</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Explanation on why the microphone access is needed.</string>
 	<key>CFBundleDevelopmentRegion</key>
@@ -49,5 +53,12 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>NSDocumentsFolderUsageDescription</string>
+	<key>NSFileProtectionCompleteUntilFirstUserAuthentication</key>
+	<string>NSFileProtectionCompleteUntilFirstUserAuthentication</string>
+
 </dict>
 </plist>
