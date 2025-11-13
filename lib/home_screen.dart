@@ -215,6 +215,53 @@ class HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                               ),
+                              Container(
+                                height: 48,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Slider(
+                                      value: _sliderValue,
+                                      min: _zoom2Slider(_minZoomLevel),
+                                      max: _zoom2Slider(_maxZoomLevel),
+                                      onChanged: (newValue) {
+                                        setState(() {
+                                          _controller.setZoomLevel(
+                                              _slider2Zoom(newValue));
+                                          _sliderValue = newValue;
+                                        });
+                                      },
+                                    ),
+                                    Spacer(),
+                                    IconButton(
+                                        onPressed: () {
+                                          if (currentLensDirection ==
+                                              CameraLensDirection.back) {
+                                            currentLensDirection =
+                                                CameraLensDirection.front;
+                                          } else {
+                                            currentLensDirection =
+                                                CameraLensDirection.back;
+                                          }
+
+                                          for (var (lensIndex, cameraLens)
+                                              in cameras.indexed) {
+                                            if (cameraLens.lensDirection ==
+                                                currentLensDirection) {
+                                              setState(() {
+                                                Vibration.vibrate(
+                                                    amplitude: 255,
+                                                    duration: 5);
+                                                selectedLensIndex = lensIndex;
+                                                _initCamera(currentResolution);
+                                              });
+                                            }
+                                          }
+                                        },
+                                        icon: Icon(Icons.cameraswitch)),
+                                  ],
+                                ),
+                              )
                             ],
                           );
                         },
@@ -227,66 +274,6 @@ class HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            FutureBuilder(
-                future: _initializeControllerFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.done) {
-                    return Container(
-                      height: 40,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 12,
-                          ),
-                          Slider(
-                            value: _sliderValue,
-                            min: _zoom2Slider(_minZoomLevel),
-                            max: _zoom2Slider(_maxZoomLevel),
-                            onChanged: (newValue) {
-                              setState(() {
-                                _controller
-                                    .setZoomLevel(_slider2Zoom(newValue));
-                                _sliderValue = newValue;
-                              });
-                            },
-                          ),
-                          Spacer(),
-                          IconButton(
-                              onPressed: () {
-                                if (currentLensDirection ==
-                                    CameraLensDirection.back) {
-                                  currentLensDirection =
-                                      CameraLensDirection.front;
-                                } else {
-                                  currentLensDirection =
-                                      CameraLensDirection.back;
-                                }
-
-                                for (var (lensIndex, cameraLens)
-                                    in cameras.indexed) {
-                                  if (cameraLens.lensDirection ==
-                                      currentLensDirection) {
-                                    setState(() {
-                                      Vibration.vibrate(
-                                          amplitude: 255, duration: 5);
-                                      selectedLensIndex = lensIndex;
-                                      _initCamera(currentResolution);
-                                    });
-                                  }
-                                }
-                              },
-                              icon: Icon(Icons.cameraswitch)),
-                          Container(
-                            width: 12,
-                          )
-                        ],
-                      ),
-                    );
-                  } else {
-                    return Container(height: 40);
-                  }
-                }),
             Expanded(
               child: MasonryGridView.builder(
                   padding: EdgeInsets.fromLTRB(
