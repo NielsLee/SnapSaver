@@ -1,0 +1,2 @@
+1. Fixed photo resolution to 4:3
+2. Adjusted zoom frame and front/back camera switch positions
