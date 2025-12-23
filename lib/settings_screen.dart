@@ -101,17 +101,21 @@ class SettingsScreenState extends State<SettingsScreen> {
             if (isColorMenuExpanded)
               Container(
                 padding: const EdgeInsets.all(8),
-                child: Row(
-                  children: [
-                    Padding(padding: EdgeInsets.all(24)),
-                    _buildColorButton(Colors.red),
-                    _buildColorButton(Colors.orange),
-                    _buildColorButton(Colors.yellow),
-                    _buildColorButton(Colors.green),
-                    _buildColorButton(Colors.cyan),
-                    _buildColorButton(Colors.blue),
-                    _buildColorButton(Colors.purple),
-                  ],
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      Padding(padding: EdgeInsets.all(8)),
+                      _buildColorButton(Colors.red),
+                      _buildColorButton(Colors.orange),
+                      _buildColorButton(Colors.yellow),
+                      _buildColorButton(Colors.green),
+                      _buildColorButton(Colors.cyan),
+                      _buildColorButton(Colors.blue),
+                      _buildColorButton(Colors.purple),
+                      Padding(padding: EdgeInsets.all(8)),
+                    ],
+                  ),
                 ),
               ),
           ],
