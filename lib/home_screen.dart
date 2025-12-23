@@ -38,6 +38,7 @@ class HomeScreenState extends State<HomeScreen> {
   ResolutionPreset currentResolution = ResolutionPreset.max; // default max
   int currentResolutionIndex = 0;
   var currentLensDirection = CameraLensDirection.back;
+  FlashMode currentFlashMode = FlashMode.auto; // 闪光灯模式：auto, off, always
 
   @override
   void initState() {
@@ -60,6 +61,8 @@ class HomeScreenState extends State<HomeScreen> {
       setState(() {});
     }
     await _resetZoomLevel();
+    // 设置闪光灯模式
+    await _controller.setFlashMode(currentFlashMode);
   }
 
   @override
@@ -234,6 +237,30 @@ class HomeScreenState extends State<HomeScreen> {
                                     ),
                                     Spacer(),
                                     IconButton(
+                                      onPressed: () async {
+                                        setState(() {
+                                          // 切换闪光灯模式：auto -> off -> always -> auto
+                                          if (currentFlashMode == FlashMode.auto) {
+                                            currentFlashMode = FlashMode.off;
+                                          } else if (currentFlashMode == FlashMode.off) {
+                                            currentFlashMode = FlashMode.always;
+                                          } else {
+                                            currentFlashMode = FlashMode.auto;
+                                          }
+                                        });
+                                        await _controller.setFlashMode(currentFlashMode);
+                                        Vibration.vibrate(amplitude: 255, duration: 5);
+                                      },
+                                      icon: Icon(
+                                        currentFlashMode == FlashMode.auto
+                                            ? Icons.flash_auto
+                                            : currentFlashMode == FlashMode.off
+                                                ? Icons.flash_off
+                                                : Icons.flash_on,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                    IconButton(
                                         onPressed: () {
                                           if (currentLensDirection ==
                                               CameraLensDirection.back) {
@@ -309,6 +336,10 @@ class HomeScreenState extends State<HomeScreen> {
                         await Vibration.vibrate(amplitude: 255, duration: 5);
                         await AudioPlayer()
                             .play(AssetSource('sounds/camera_shutter.mp3'));
+                        
+                        // 根据闪光灯模式设置
+                        await _controller.setFlashMode(currentFlashMode);
+                        
                         final image = await _controller.takePicture();
                         debugPrint(
                             "take photo result: path: ${image.path} name: ${image.name}");
