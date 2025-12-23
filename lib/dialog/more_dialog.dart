@@ -6,7 +6,10 @@ import 'package:intl/intl.dart';
 import 'package:snap_saver/entity/more.dart';
 
 class MoreDialog extends StatefulWidget {
-  const MoreDialog({super.key});
+  final String? initialPhotoName;
+  final int? initialSuffixType;
+  
+  const MoreDialog({super.key, this.initialPhotoName, this.initialSuffixType});
 
   @override
   State<StatefulWidget> createState() => MoreDialogState();
@@ -17,6 +20,20 @@ class MoreDialogState extends State<MoreDialog> {
   String examplePhotoName = "";
 
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // 如果有初始值，设置一下
+    if (widget.initialPhotoName != null) {
+      fileNameController.text = widget.initialPhotoName!;
+    }
+    if (widget.initialSuffixType != null) {
+      _selectedIndex = widget.initialSuffixType!;
+    }
+
+    _refreshExamplePhotoName();
+  }
 
   void _refreshExamplePhotoName() {
     String newValue = fileNameController.text;

@@ -10,7 +10,7 @@ import 'package:intl/intl.dart';
 import 'package:path/path.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:snap_saver/dialog/remove_saver_dialog.dart';
+import 'package:snap_saver/dialog/insert_saver_dialog.dart';
 import 'package:snap_saver/viewmodel/home_view_model.dart';
 import 'package:vibration/vibration.dart';
 import 'package:path/path.dart' as path;
@@ -367,13 +367,13 @@ class HomeScreenState extends State<HomeScreen> {
                       }
                     }
 
-                    Future<bool?> _showRemoveDialog() async {
-                      return showGeneralDialog<bool?>(
+                    Future<dynamic> _showEditDialog() async {
+                      return showGeneralDialog<dynamic>(
                         context: context,
-                        barrierDismissible: true,
-                        barrierLabel: "Remove Saver Dialog",
+                        barrierDismissible: false,
+                        barrierLabel: "Edit Saver Dialog",
                         pageBuilder: (BuildContext context, anim1, anmi2) {
-                          return RemoveSaverDialog(saver: itemList[index]);
+                          return InsertSaverDialog(saver: itemList[index]);
                         },
                       );
                     }
@@ -383,9 +383,26 @@ class HomeScreenState extends State<HomeScreen> {
                       margin: const EdgeInsets.all(4),
                       child: ElevatedButton(
                         onLongPress: () async {
-                          final remove = await _showRemoveDialog();
-                          if (remove == true) {
-                            viewModel.removeSaver(itemList[index]);
+                          final result = await _showEditDialog();
+                          // 长按的情况只有下面这两种操作 没有创建操作
+                          if (result != null) {
+                            if (result is Map && result['action'] == 'delete') {
+                              // 删除操作
+                              viewModel.removeSaver(itemList[index]);
+                            } else if (result is Map && result['action'] == 'update') {
+                              // 更新操作
+                              final dialogViewModel = result['viewModel'];
+                              final updatedSaver = Saver(
+                                paths: dialogViewModel.getPath(),
+                                name: dialogViewModel.getName(),
+                                color: dialogViewModel.getColor()?.value,
+                                count: itemList[index].count,
+                                photoName: dialogViewModel.getPhotoName(),
+                                suffixType: dialogViewModel.getSuffixType(),
+                              );
+                              viewModel.removeSaver(itemList[index]);
+                              viewModel.addSaver(updatedSaver, context);
+                            }
                           }
                         },
                         onPressed: _takePhotos,
