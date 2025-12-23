@@ -1,0 +1,3 @@
+1. Added flash control with three modes: auto, on, and off
+2. Enabled horizontal scrolling for color selection row
+3. Long press on saver button now opens edit dialog instead of delete-only dialog
