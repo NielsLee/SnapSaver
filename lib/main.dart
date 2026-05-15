@@ -7,7 +7,7 @@ import 'package:snap_saver/dialog/insert_saver_dialog.dart';
 import 'package:snap_saver/settings_screen.dart';
 import 'package:snap_saver/viewmodel/dialog_view_model.dart';
 import 'package:snap_saver/viewmodel/home_view_model.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:snap_saver/l10n/app_localizations.dart';
 import 'package:vibration/vibration.dart';
 import 'entity/saver.dart';
 import 'home_screen.dart';

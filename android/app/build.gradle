@@ -24,7 +24,7 @@ if (flutterVersionName == null) {
 
 android {
     namespace "lying.fengfeng.snapsaver.snap_saver"
-    compileSdkVersion 35
+    compileSdk = 36
     ndkVersion flutter.ndkVersion
 
     compileOptions {
@@ -43,7 +43,7 @@ android {
 
     defaultConfig {
         applicationId "lying.fengfeng.snapsaver"
-        minSdkVersion 21
+        minSdkVersion flutter.minSdkVersion
         targetSdkVersion 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName

@@ -9,7 +9,7 @@ import 'package:snap_saver/dialog/path_selector_entity.dart';
 import 'package:snap_saver/entity/more.dart';
 import 'package:snap_saver/entity/saver.dart';
 import 'package:snap_saver/viewmodel/dialog_view_model.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:snap_saver/l10n/app_localizations.dart';
 import 'package:vibration/vibration.dart';
 
 import '../file/android_native_path_picker.dart';

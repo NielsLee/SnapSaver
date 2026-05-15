@@ -6,7 +6,7 @@ class AndroidNativePathPicker extends PathPicker {
 
   @override
   void selectPath(void Function(String? p1) callback) async {
-    String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+    String? selectedDirectory = await FilePicker.getDirectoryPath();
     callback(selectedDirectory);
   }
 }
