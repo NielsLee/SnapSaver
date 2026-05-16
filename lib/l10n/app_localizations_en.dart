@@ -129,4 +129,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get openAlbumDirectory => 'Preview Folder';
+
+  @override
+  String photoSavedTo(String path) {
+    return 'Photo saved to $path';
+  }
 }

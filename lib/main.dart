@@ -85,40 +85,6 @@ class MainScaffoldState extends State<MainScaffold> {
           title: Text(AppLocalizations.of(context)!.appTitle),
           backgroundColor: Theme.of(context).colorScheme.primaryContainer,
           actions: [
-            DropdownButton<int>(
-              value: context.watch<HomeViewModel>().resolution,
-              onChanged: (int? newResolution) {
-                if (newResolution == null) return;
-                Vibration.vibrate(amplitude: 255, duration: 5);
-                context.read<HomeViewModel>().updateResolution(newResolution);
-              },
-              underline: Divider(height: 0, color: Colors.transparent),
-              items: [
-                DropdownMenuItem(
-                    value: 0,
-                    child: Text(AppLocalizations.of(context)!.resolution_low)),
-                DropdownMenuItem(
-                    value: 1,
-                    child:
-                        Text(AppLocalizations.of(context)!.resolution_medium)),
-                DropdownMenuItem(
-                    value: 2,
-                    child: Text(AppLocalizations.of(context)!.resolution_high)),
-                DropdownMenuItem(
-                    value: 3,
-                    child: Text(AppLocalizations.of(context)!.resolution_vh)),
-                DropdownMenuItem(
-                    value: 4,
-                    child: Text(AppLocalizations.of(context)!.resolution_uh)),
-                DropdownMenuItem(
-                    value: 5,
-                    child: Text(AppLocalizations.of(context)!.resolution_max)),
-              ],
-              icon: Container(
-                padding: EdgeInsets.all(8),
-                child: Icon(Icons.settings_overscan),
-              ),
-            ),
             IconButton(
                 onPressed: () {
                   Vibration.vibrate(amplitude: 255, duration: 5);

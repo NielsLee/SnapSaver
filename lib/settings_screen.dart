@@ -100,20 +100,26 @@ class SettingsScreenState extends State<SettingsScreen> {
             ),
             if (isColorMenuExpanded)
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      Padding(padding: EdgeInsets.all(8)),
+                      const SizedBox(width: 8),
                       _buildColorButton(Colors.red),
+                      const SizedBox(width: 8),
                       _buildColorButton(Colors.orange),
+                      const SizedBox(width: 8),
                       _buildColorButton(Colors.yellow),
+                      const SizedBox(width: 8),
                       _buildColorButton(Colors.green),
+                      const SizedBox(width: 8),
                       _buildColorButton(Colors.cyan),
+                      const SizedBox(width: 8),
                       _buildColorButton(Colors.blue),
+                      const SizedBox(width: 8),
                       _buildColorButton(Colors.purple),
-                      Padding(padding: EdgeInsets.all(8)),
+                      const SizedBox(width: 8),
                     ],
                   ),
                 ),
@@ -155,10 +161,7 @@ class SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _launchGithub() async {
-    final Uri githubUrl = Uri(
-      scheme: 'https',
-      path: 'github.com/NielsLee/SnapSaver',
-    );
+    final Uri githubUrl = Uri.parse('https://github.com/NielsLee/SnapSaver');
 
     if (!await launchUrl(githubUrl)) {
       Fluttertoast.showToast(
@@ -172,10 +175,7 @@ class SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _launchCoffee() async {
-    final Uri coffeeUrl = Uri(
-      scheme: 'https',
-      path: 'ko-fi.com/nielslee',
-    );
+    final Uri coffeeUrl = Uri.parse('https://ko-fi.com/nielslee');
 
     Fluttertoast.showToast(
       msg: '😊Have a nice day!',
@@ -208,14 +208,15 @@ class SettingsScreenState extends State<SettingsScreen> {
             Vibration.vibrate(amplitude: 255, duration: 5);
           },
           child: Container(
-            width: 48,
-            height: 36,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               color: color,
               shape: BoxShape.circle,
               border: Border.all(
                 color: isSelected ? Colors.white : Colors.transparent,
-                width: 4,
+                width: 3,
+                
               ),
               boxShadow: [
                 BoxShadow(

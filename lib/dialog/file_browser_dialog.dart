@@ -78,10 +78,6 @@ class _FileBrowserDialogState extends State<FileBrowserDialog> {
     }
   }
 
-  void _navigateToDirectory(String path) {
-    _loadDirectory(path);
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -175,63 +171,60 @@ class _FileBrowserDialogState extends State<FileBrowserDialog> {
                                 final name = file.path.split('/').last;
                                 final isDir = file is Directory;
 
-                                return InkWell(
-                                  onTap: isDir ? () => _navigateToDirectory(file.path) : null,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.grey[300]!),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Column(
-                                      children: [
-                                        Expanded(
-                                          child: isDir
-                                              ? Center(
-                                                  child: Icon(
-                                                    Icons.folder,
-                                                    size: 48,
-                                                    color: Colors.amber[700],
-                                                  ),
-                                                )
-                                              : ClipRRect(
-                                                  borderRadius: const BorderRadius.vertical(
-                                                    top: Radius.circular(8),
-                                                  ),
-                                                  child: Image.file(
-                                                    File(file.path),
-                                                    fit: BoxFit.cover,
-                                                    width: double.infinity,
-                                                    errorBuilder: (context, error, stackTrace) {
-                                                      return Center(
-                                                        child: Icon(
-                                                          Icons.broken_image,
-                                                          size: 48,
-                                                          color: Colors.grey[400],
-                                                        ),
-                                                      );
-                                                    },
-                                                  ),
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.grey[300]!),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Expanded(
+                                        child: isDir
+                                            ? Center(
+                                                child: Icon(
+                                                  Icons.folder,
+                                                  size: 48,
+                                                  color: Colors.amber[700],
                                                 ),
-                                        ),
-                                        Container(
-                                          width: double.infinity,
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey[50],
-                                            borderRadius: const BorderRadius.vertical(
-                                              bottom: Radius.circular(8),
-                                            ),
+                                              )
+                                            : ClipRRect(
+                                                borderRadius: const BorderRadius.vertical(
+                                                  top: Radius.circular(8),
+                                                ),
+                                                child: Image.file(
+                                                  File(file.path),
+                                                  fit: BoxFit.cover,
+                                                  width: double.infinity,
+                                                  errorBuilder: (context, error, stackTrace) {
+                                                    return Center(
+                                                      child: Icon(
+                                                        Icons.broken_image,
+                                                        size: 48,
+                                                        color: Colors.grey[400],
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                      ),
+                                      Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[50],
+                                          borderRadius: const BorderRadius.vertical(
+                                            bottom: Radius.circular(8),
                                           ),
-                                          child: Text(
-                                            name,
-                                            style: const TextStyle(fontSize: 12),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            textAlign: TextAlign.center,
-                                          ),
                                         ),
-                                      ],
-                                    ),
+                                        child: Text(
+                                          name,
+                                          style: const TextStyle(fontSize: 12),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 );
                               },

@@ -128,4 +128,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get openAlbumDirectory => '预览文件夹';
+
+  @override
+  String photoSavedTo(String path) {
+    return '图片已保存到$path';
+  }
 }

@@ -8,17 +8,21 @@ class HomeViewModel extends ChangeNotifier {
   final List<Saver> _saverList = [];
   Color _seedColor = Colors.green;
   int _resolution = 0;
+  int _cameraLensDirection = 0; // 0 = back, 1 = front
   static const String _resolutionKey = 'resolution';
+  static const String _cameraLensKey = 'camera_lens_direction';
 
   HomeViewModel() {
     _initSavers();
     _loadSeedColor();
     _loadResolution();
+    _loadCameraLensDirection();
   }
 
   List<Saver> get savers => _saverList;
   Color get seedColor => _seedColor;
   int get resolution => _resolution;
+  int get cameraLensDirection => _cameraLensDirection;
 
   Future<void> _loadSeedColor() async {
     final prefs = await SharedPreferences.getInstance();
@@ -45,6 +49,20 @@ class HomeViewModel extends ChangeNotifier {
     _resolution = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_resolutionKey, value);
+    notifyListeners();
+  }
+
+  Future<void> _loadCameraLensDirection() async {
+    final prefs = await SharedPreferences.getInstance();
+    _cameraLensDirection = prefs.getInt(_cameraLensKey) ?? 0;
+    notifyListeners();
+  }
+
+  Future<void> updateCameraLensDirection(int value) async {
+    if (value < 0 || value > 1) return;
+    _cameraLensDirection = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_cameraLensKey, value);
     notifyListeners();
   }
 

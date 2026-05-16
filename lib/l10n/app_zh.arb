@@ -38,5 +38,13 @@
     "resolution_uh": "极高",
     "resolution_max": "最大",
     "editSaverButton": "编辑拍照键",
-    "openAlbumDirectory": "预览文件夹"
+    "openAlbumDirectory": "预览文件夹",
+    "photoSavedTo": "图片已保存到{path}",
+    "@photoSavedTo": {
+        "placeholders": {
+            "path": {
+                "type": "String"
+            }
+        }
+    }
 }

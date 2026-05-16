@@ -9,11 +9,13 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import 'package:snap_saver/dialog/insert_saver_dialog.dart';
 import 'package:snap_saver/dialog/saver_long_press_dialog.dart';
 import 'package:snap_saver/dialog/file_browser_dialog.dart';
 import 'package:snap_saver/viewmodel/home_view_model.dart';
+import 'package:snap_saver/l10n/app_localizations.dart';
 import 'package:vibration/vibration.dart';
 import 'package:path/path.dart' as path;
 import 'package:image/image.dart' as img;
@@ -27,50 +29,167 @@ class HomeScreen extends StatefulWidget {
   HomeScreenState createState() => HomeScreenState();
 }
 
-class HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   late List<CameraDescription> cameras;
-  late int selectedLensIndex = 0;
-  late CameraController _controller;
+  int selectedLensIndex = 0;
+  CameraController? _controller;
   double _minZoomLevel = 1 / 2;
   double _maxZoomLevel = 3;
   Future<void>? _initializeControllerFuture;
   bool isCapturing = false;
   Offset? focusOffset = null;
   double _sliderValue = 1;
-  ResolutionPreset currentResolution = ResolutionPreset.max; // default max
+  ResolutionPreset currentResolution = ResolutionPreset.max;
   int currentResolutionIndex = 0;
   var currentLensDirection = CameraLensDirection.back;
-  FlashMode currentFlashMode = FlashMode.auto; // 闪光灯模式：auto, off, always
+  FlashMode currentFlashMode = FlashMode.auto;
+  bool _isInitializingCamera = false;
 
   @override
   void initState() {
     super.initState();
-
-    _initCamera(currentResolution);
+    WidgetsBinding.instance.addObserver(this);
   }
 
-  Future<void> _initCamera(ResolutionPreset resolution) async {
-    WidgetsFlutterBinding.ensureInitialized();
-
-    cameras = await availableCameras();
-    await Permission.camera.request();
-    _controller = CameraController(cameras[selectedLensIndex], resolution,
-        enableAudio: false);
-
-    _initializeControllerFuture = _controller.initialize();
-
-    if (mounted) {
-      setState(() {});
-    }
-    await _resetZoomLevel();
-    // 设置闪光灯模式
-    await _controller.setFlashMode(currentFlashMode);
+  void _initCameraFromViewModel(int lensDirection, int resolution) {
+    if (_isInitializingCamera || !mounted) return;
+    setState(() {
+      currentResolutionIndex = resolution;
+    });
+    // lensDirection: 0 = back, 1 = front
+    final direction = lensDirection == 0 ? CameraLensDirection.back : CameraLensDirection.front;
+    _initCameraByDirection(direction, _getResolutionPreset(resolution));
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  ResolutionPreset _getResolutionPreset(int index) {
+    switch (index) {
+      case 0:
+        return ResolutionPreset.low;
+      case 1:
+        return ResolutionPreset.medium;
+      case 2:
+        return ResolutionPreset.high;
+      case 3:
+        return ResolutionPreset.veryHigh;
+      case 4:
+        return ResolutionPreset.ultraHigh;
+      case 5:
+        return ResolutionPreset.max;
+      default:
+        return ResolutionPreset.max;
+    }
+  }
+
+  Future<void> _initCameraByDirection(CameraLensDirection direction, ResolutionPreset resolution) async {
+    if (_isInitializingCamera) return;
+    _isInitializingCamera = true;
+
+    try {
+      WidgetsFlutterBinding.ensureInitialized();
+
+      cameras = await availableCameras();
+      await Permission.camera.request();
+
+      // Find camera index by direction
+      int actualIndex = 0;
+      for (int i = 0; i < cameras.length; i++) {
+        if (cameras[i].lensDirection == direction) {
+          actualIndex = i;
+          break;
+        }
+      }
+
+      selectedLensIndex = actualIndex;
+      currentLensDirection = direction;
+
+      if (mounted) {
+        setState(() {
+          _initializeControllerFuture = null;
+        });
+      }
+
+      final newController = CameraController(
+        cameras[actualIndex],
+        resolution,
+        enableAudio: false,
+      );
+
+      if (!mounted) {
+        await newController.dispose();
+        return;
+      }
+
+      setState(() {
+        _controller = newController;
+        _initializeControllerFuture = _controller!.initialize();
+      });
+
+      await _initializeControllerFuture;
+      await _resetZoomLevel();
+      try {
+        await _controller!.setFlashMode(currentFlashMode);
+      } catch (e) {
+        log('Could not set flash mode: $e');
+      }
+    } finally {
+      _isInitializingCamera = false;
+    }
+  }
+
+  Future<void> _initCamera(int lensIndex, ResolutionPreset resolution) async {
+    if (_isInitializingCamera) return;
+    _isInitializingCamera = true;
+
+    try {
+      WidgetsFlutterBinding.ensureInitialized();
+
+      cameras = await availableCameras();
+      await Permission.camera.request();
+
+      final actualLensIndex = lensIndex < cameras.length ? lensIndex : 0;
+
+      selectedLensIndex = actualLensIndex;
+      currentLensDirection = cameras[actualLensIndex].lensDirection;
+
+      if (mounted) {
+        setState(() {
+          _initializeControllerFuture = null;
+        });
+      }
+
+      final newController = CameraController(
+        cameras[actualLensIndex],
+        resolution,
+        enableAudio: false,
+      );
+
+      if (!mounted) {
+        await newController.dispose();
+        return;
+      }
+
+      setState(() {
+        _controller = newController;
+        _initializeControllerFuture = _controller!.initialize();
+      });
+
+      await _initializeControllerFuture;
+      await _resetZoomLevel();
+      try {
+        await _controller!.setFlashMode(currentFlashMode);
+      } catch (e) {
+        log('Could not set flash mode: $e');
+      }
+    } finally {
+      _isInitializingCamera = false;
+    }
   }
 
   Future<void> _requestStoragePermission() async {
@@ -88,23 +207,25 @@ class HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    int newResolution = context.watch<HomeViewModel>().resolution;
+    final newResolution = context.select<HomeViewModel, int>((vm) => vm.resolution);
+    final savedLensDirection = context.select<HomeViewModel, int>((vm) => vm.cameraLensDirection);
+
+    // Initialize camera with saved values on first build
+    if (_controller == null && !_isInitializingCamera) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _initCameraFromViewModel(savedLensDirection, newResolution);
+      });
+    }
+
     if (newResolution != currentResolutionIndex) {
-      switch (context.watch<HomeViewModel>().resolution) {
-        case 0:
-          _initCamera(ResolutionPreset.low);
-        case 1:
-          _initCamera(ResolutionPreset.medium);
-        case 2:
-          _initCamera(ResolutionPreset.high);
-        case 3:
-          _initCamera(ResolutionPreset.veryHigh);
-        case 4:
-          _initCamera(ResolutionPreset.ultraHigh);
-        case 5:
-          _initCamera(ResolutionPreset.max);
-      }
-      currentResolutionIndex = newResolution;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            currentResolutionIndex = newResolution;
+          });
+          _initCamera(selectedLensIndex, _getResolutionPreset(newResolution));
+        }
+      });
     }
 
     return Consumer<HomeViewModel>(
@@ -122,14 +243,25 @@ class HomeScreenState extends State<HomeScreen> {
                   future: _initializeControllerFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.done &&
-                        !isCapturing) {
+                        !isCapturing &&
+                        snapshot.error == null &&
+                        _controller != null &&
+                        _controller!.value.isInitialized) {
                       return LayoutBuilder(
-                        builder:
-                            (BuildContext context, BoxConstraints constraints) {
+                        builder: (BuildContext context, BoxConstraints constraints) {
+                          final previewSize = _controller!.value.previewSize;
+                          if (previewSize == null || previewSize.height == 0) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+
+                          final previewAspectRatio = previewSize.height / previewSize.width;
+                          final targetWidth = constraints.maxWidth;
+                          const baseWidth = 100.0;
+                          final scale = targetWidth / baseWidth;
+
                           return Stack(
                             alignment: AlignmentDirectional.bottomCenter,
                             children: <Widget>[
-                              // 使用裁剪方式：保持宽度不变，高度对称裁剪
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
                                 child: SizedBox(
@@ -140,33 +272,6 @@ class HomeScreenState extends State<HomeScreen> {
                                       alignment: Alignment.center,
                                       child: Builder(
                                         builder: (context) {
-                                          // 获取相机预览的实际尺寸
-                                          final previewSize =
-                                              _controller.value.previewSize;
-                                          if (previewSize == null ||
-                                              previewSize.height == 0) {
-                                            return Center(
-                                                child:
-                                                    CircularProgressIndicator());
-                                          }
-
-                                          // 计算相机预览的实际宽高比
-                                          final previewAspectRatio =
-                                              previewSize.height /
-                                                  previewSize.width;
-
-                                          // 目标宽度
-                                          final targetWidth =
-                                              constraints.maxWidth;
-
-                                          // 使用 AspectRatio 让 CameraPreview 按原始比例显示
-                                          // 然后用 Transform.scale 等比例放大，使宽度等于目标宽度
-                                          // 使用较小的基准宽度，让 AspectRatio 有约束可计算
-                                          final baseWidth = 100.0;
-
-                                          // 计算缩放比例，使放大后的宽度等于目标宽度
-                                          final scale = targetWidth / baseWidth;
-
                                           return Center(
                                             child: Transform.scale(
                                               scale: scale,
@@ -174,10 +279,8 @@ class HomeScreenState extends State<HomeScreen> {
                                               child: SizedBox(
                                                 width: baseWidth,
                                                 child: AspectRatio(
-                                                  aspectRatio:
-                                                      previewAspectRatio,
-                                                  child: CameraPreview(
-                                                      _controller),
+                                                  aspectRatio: previewAspectRatio,
+                                                  child: CameraPreview(_controller!),
                                                 ),
                                               ),
                                             ),
@@ -188,7 +291,6 @@ class HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                               ),
-                              // 添加触摸监听层
                               Positioned.fill(
                                 child: Listener(
                                   onPointerDown: (downEvent) {
@@ -199,49 +301,62 @@ class HomeScreenState extends State<HomeScreen> {
                                         downEvent.localPosition.dy,
                                       );
                                     });
-                                    // delay 1 second and remove focus box
-                                    Timer(Duration(seconds: 1), () {
-                                      setState(() {
-                                        focusOffset = null;
-                                      });
+                                    Timer(const Duration(seconds: 1), () {
+                                      if (mounted) {
+                                        setState(() {
+                                          focusOffset = null;
+                                        });
+                                      }
                                     });
                                   },
                                   behavior: HitTestBehavior.translucent,
-                                  child: Container(
-                                    color: Colors.transparent,
-                                  ),
+                                  child: Container(color: Colors.transparent),
                                 ),
                               ),
-                              // 对焦框绘制层（放在最上层，确保显示）
                               Positioned.fill(
                                 child: IgnorePointer(
-                                  child: CustomPaint(
-                                    painter: FocusBoxPainter(focusOffset),
-                                  ),
+                                  child: CustomPaint(painter: FocusBoxPainter(focusOffset)),
                                 ),
                               ),
-                              Container(
+                              SizedBox(
                                 height: 48,
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Slider(
-                                      value: _sliderValue,
-                                      min: _zoom2Slider(_minZoomLevel),
-                                      max: _zoom2Slider(_maxZoomLevel),
-                                      onChanged: (newValue) {
-                                        setState(() {
-                                          _controller.setZoomLevel(
-                                              _slider2Zoom(newValue));
-                                          _sliderValue = newValue;
-                                        });
-                                      },
+                                    Expanded(
+                                      child: Slider(
+                                        value: _sliderValue,
+                                        min: _zoom2Slider(_minZoomLevel),
+                                        max: _zoom2Slider(_maxZoomLevel),
+                                        onChanged: _minZoomLevel != _maxZoomLevel
+                                            ? (newValue) {
+                                                setState(() {
+                                                  _controller?.setZoomLevel(_slider2Zoom(newValue));
+                                                  _sliderValue = newValue;
+                                                });
+                                              }
+                                            : null,
+                                      ),
                                     ),
-                                    Spacer(),
+                                    const SizedBox(width: 8),
+                                    PopupMenuButton<int>(
+                                      icon: const Icon(Icons.settings_overscan, color: Colors.black),
+                                      onSelected: (int newResolution) {
+                                        Vibration.vibrate(amplitude: 255, duration: 5);
+                                        viewModel.updateResolution(newResolution);
+                                      },
+                                      itemBuilder: (context) => [
+                                        PopupMenuItem(value: 0, child: Text(AppLocalizations.of(context)!.resolution_low)),
+                                        PopupMenuItem(value: 1, child: Text(AppLocalizations.of(context)!.resolution_medium)),
+                                        PopupMenuItem(value: 2, child: Text(AppLocalizations.of(context)!.resolution_high)),
+                                        PopupMenuItem(value: 3, child: Text(AppLocalizations.of(context)!.resolution_vh)),
+                                        PopupMenuItem(value: 4, child: Text(AppLocalizations.of(context)!.resolution_uh)),
+                                        PopupMenuItem(value: 5, child: Text(AppLocalizations.of(context)!.resolution_max)),
+                                      ],
+                                    ),
                                     IconButton(
                                       onPressed: () async {
                                         setState(() {
-                                          // 切换闪光灯模式：auto -> off -> always -> auto
                                           if (currentFlashMode == FlashMode.auto) {
                                             currentFlashMode = FlashMode.off;
                                           } else if (currentFlashMode == FlashMode.off) {
@@ -250,7 +365,11 @@ class HomeScreenState extends State<HomeScreen> {
                                             currentFlashMode = FlashMode.auto;
                                           }
                                         });
-                                        await _controller.setFlashMode(currentFlashMode);
+                                        try {
+                                          await _controller?.setFlashMode(currentFlashMode);
+                                        } catch (e) {
+                                          log('Could not set flash mode: $e');
+                                        }
                                         Vibration.vibrate(amplitude: 255, duration: 5);
                                       },
                                       icon: Icon(
@@ -263,31 +382,12 @@ class HomeScreenState extends State<HomeScreen> {
                                       ),
                                     ),
                                     IconButton(
-                                        onPressed: () {
-                                          if (currentLensDirection ==
-                                              CameraLensDirection.back) {
-                                            currentLensDirection =
-                                                CameraLensDirection.front;
-                                          } else {
-                                            currentLensDirection =
-                                                CameraLensDirection.back;
-                                          }
-
-                                          for (var (lensIndex, cameraLens)
-                                              in cameras.indexed) {
-                                            if (cameraLens.lensDirection ==
-                                                currentLensDirection) {
-                                              setState(() {
-                                                Vibration.vibrate(
-                                                    amplitude: 255,
-                                                    duration: 5);
-                                                selectedLensIndex = lensIndex;
-                                                _initCamera(currentResolution);
-                                              });
-                                            }
-                                          }
-                                        },
-                                        icon: Icon(Icons.cameraswitch)),
+                                      onPressed: () async {
+                                        Vibration.vibrate(amplitude: 255, duration: 5);
+                                        await _toggleCamera(viewModel);
+                                      },
+                                      icon: const Icon(Icons.cameraswitch, color: Colors.black),
+                                    ),
                                   ],
                                 ),
                               )
@@ -296,7 +396,23 @@ class HomeScreenState extends State<HomeScreen> {
                         },
                       );
                     } else {
-                      // Otherwise, display a loading indicator.
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text('相机初始化失败'),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () {
+                                  _initCamera(selectedLensIndex, currentResolution);
+                                },
+                                child: const Text('重试'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
                       return const Center(child: CircularProgressIndicator());
                     }
                   },
@@ -305,177 +421,193 @@ class HomeScreenState extends State<HomeScreen> {
             ),
             Expanded(
               child: MasonryGridView.builder(
-                  padding: EdgeInsets.fromLTRB(
-                      saversRowPadding, 0, saversRowPadding, 12),
-                  itemCount: itemList.length,
-                  scrollDirection: Axis.horizontal,
-                  gridDelegate:
-                      const SliverSimpleGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2),
-                  itemBuilder: (context, index) {
-                    ColorScheme saverColorScheme =
-                        ColorScheme.fromSeed(seedColor: viewModel.seedColor);
+                padding: EdgeInsets.fromLTRB(saversRowPadding, 0, saversRowPadding, 12),
+                itemCount: itemList.length,
+                scrollDirection: Axis.horizontal,
+                gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                ),
+                itemBuilder: (context, index) {
+                  ColorScheme saverColorScheme = ColorScheme.fromSeed(
+                    seedColor: viewModel.seedColor,
+                  );
 
-                    // generate Saver color scheme
-                    if (itemList[index].color != null) {
-                      saverColorScheme = ColorScheme.fromSeed(
-                          seedColor: Color(itemList[index].color!));
+                  if (itemList[index].color != null) {
+                    saverColorScheme = ColorScheme.fromSeed(
+                      seedColor: Color(itemList[index].color!),
+                    );
+                  }
+
+                  Future<void> _takePhotos() async {
+                    if (isCapturing || _controller == null || !_controller!.value.isInitialized) {
+                      return;
                     }
+                    try {
+                      await _initializeControllerFuture;
 
-                    // Function for taking photos
-                    Future<void> _takePhotos() async {
-                      if (isCapturing) {
-                        // if is capturing, skip
-                        return;
-                      }
+                      setState(() => isCapturing = true);
+
+                      await Vibration.vibrate(amplitude: 255, duration: 5);
+                      await AudioPlayer().play(AssetSource('sounds/camera_shutter.mp3'));
+
                       try {
-                        await _initializeControllerFuture;
-
-                        setState(() {
-                          isCapturing = true;
-                        });
-
-                        await Vibration.vibrate(amplitude: 255, duration: 5);
-                        await AudioPlayer()
-                            .play(AssetSource('sounds/camera_shutter.mp3'));
-                        
-                        // 根据闪光灯模式设置
-                        await _controller.setFlashMode(currentFlashMode);
-                        
-                        final image = await _controller.takePicture();
-                        debugPrint(
-                            "take photo result: path: ${image.path} name: ${image.name}");
-
-                        setState(() {
-                          isCapturing = false;
-                        });
-
-                        _requestStoragePermission();
-
-                        // TODO add a progress animate in Saver button
-                        final saver = itemList[index];
-                        final paths = saver.paths;
-
-                        final prefixedFileName = getPrefixedFileName(saver);
-                        await handleFileAspectRatio(image);
-                        await moveXFileToFile(image, paths, prefixedFileName);
-
-                        saver.count++;
-                        viewModel.updateSaver(saver);
-
-                        if (!context.mounted) return;
+                        await _controller!.setFlashMode(currentFlashMode);
                       } catch (e) {
-                        log(e.toString());
+                        log('Could not set flash mode for capture: $e');
                       }
-                    }
 
-                    Future<dynamic> _showEditDialog() async {
-                      return showGeneralDialog<dynamic>(
-                        context: context,
-                        barrierDismissible: false,
-                        barrierLabel: "Edit Saver Dialog",
-                        pageBuilder: (BuildContext context, anim1, anmi2) {
-                          return InsertSaverDialog(saver: itemList[index]);
-                        },
-                      );
-                    }
+                      final image = await _controller!.takePicture();
+                      debugPrint(
+                          "take photo result: path: ${image.path} name: ${image.name}");
 
-                    Future<String> _showPathSelector(List<String> paths) async {
-                      String selected = paths.first;
-                      await showDialog<void>(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: const Text('选择目录'),
-                            content: SizedBox(
-                              width: double.maxFinite,
-                              child: ListView.builder(
-                                shrinkWrap: true,
-                                itemCount: paths.length,
-                                itemBuilder: (context, index) {
-                                  return ListTile(
-                                    title: Text(paths[index]),
-                                    onTap: () {
-                                      selected = paths[index];
-                                      Navigator.of(context).pop();
-                                    },
-                                  );
-                                },
-                              ),
+                      setState(() => isCapturing = false);
+
+                      await _requestStoragePermission();
+
+                      final saver = itemList[index];
+                      final paths = saver.paths;
+                      final prefixedFileName = getPrefixedFileName(saver);
+                      await handleFileAspectRatio(image);
+                      final bool isSaved = await moveXFileToFile(image, paths, prefixedFileName);
+                      if (isSaved) {
+                        final l10n = AppLocalizations.of(context)!;
+                        Fluttertoast.showToast(
+                          msg: l10n.photoSavedTo(paths.first),
+                          toastLength: Toast.LENGTH_SHORT,
+                          gravity: ToastGravity.BOTTOM,
+                          backgroundColor: Colors.white,
+                          textColor: Colors.black,
+                        );
+                      }
+
+                      saver.count++;
+                      viewModel.updateSaver(saver);
+
+                      if (!context.mounted) return;
+                    } catch (e) {
+                      log(e.toString());
+                      if (mounted) setState(() => isCapturing = false);
+                    }
+                  }
+
+                  Future<dynamic> _showEditDialog() async {
+                    return showGeneralDialog<dynamic>(
+                      context: context,
+                      barrierDismissible: false,
+                      barrierLabel: "Edit Saver Dialog",
+                      pageBuilder: (BuildContext context, anim1, anmi2) {
+                        return InsertSaverDialog(saver: itemList[index]);
+                      },
+                    );
+                  }
+
+                  Future<String> _showPathSelector(List<String> paths) async {
+                    String selected = paths.first;
+                    await showDialog<void>(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text('选择目录'),
+                          content: SizedBox(
+                            width: double.maxFinite,
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: paths.length,
+                              itemBuilder: (context, index) {
+                                return ListTile(
+                                  title: Text(paths[index]),
+                                  onTap: () {
+                                    selected = paths[index];
+                                    Navigator.of(context).pop();
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                    return selected;
+                  }
+
+                  return Container(
+                    margin: const EdgeInsets.all(4),
+                    child: ElevatedButton(
+                      onLongPress: () async {
+                        final result = await showModalBottomSheet<String>(
+                          context: context,
+                          builder: (context) => SaverLongPressDialog(saver: itemList[index]),
+                        );
+                        if (result == 'edit') {
+                          final editResult = await _showEditDialog();
+                          if (editResult != null) {
+                            if (editResult is Map && editResult['action'] == 'delete') {
+                              viewModel.removeSaver(itemList[index]);
+                            } else if (editResult is Map && editResult['action'] == 'update') {
+                              final dialogViewModel = editResult['viewModel'];
+                              final updatedSaver = Saver(
+                                paths: dialogViewModel.getPath(),
+                                name: dialogViewModel.getName(),
+                                color: dialogViewModel.getColor()?.value,
+                                count: itemList[index].count,
+                                photoName: dialogViewModel.getPhotoName(),
+                                suffixType: dialogViewModel.getSuffixType(),
+                              );
+                              viewModel.removeSaver(itemList[index]);
+                              viewModel.addSaver(updatedSaver, context);
+                            }
+                          }
+                        } else if (result == 'browse') {
+                          String pathToOpen = itemList[index].paths.first;
+                          if (itemList[index].paths.length > 1) {
+                            pathToOpen = await _showPathSelector(itemList[index].paths);
+                            if (pathToOpen.isEmpty) return;
+                          }
+                          if (!mounted) return;
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (context) => FileBrowserDialog(
+                              directoryPath: pathToOpen,
+                              onClose: () => Navigator.of(context).pop(),
                             ),
                           );
-                        },
-                      );
-                      return selected;
-                    }
-
-                    // Saver button
-                    return Container(
-                      margin: const EdgeInsets.all(4),
-                      child: ElevatedButton(
-                        onLongPress: () async {
-                          final result = await showModalBottomSheet<String>(
-                            context: context,
-                            builder: (context) => SaverLongPressDialog(saver: itemList[index]),
-                          );
-
-                          if (result == 'edit') {
-                            final editResult = await _showEditDialog();
-                            if (editResult != null) {
-                              if (editResult is Map && editResult['action'] == 'delete') {
-                                viewModel.removeSaver(itemList[index]);
-                              } else if (editResult is Map && editResult['action'] == 'update') {
-                                final dialogViewModel = editResult['viewModel'];
-                                final updatedSaver = Saver(
-                                  paths: dialogViewModel.getPath(),
-                                  name: dialogViewModel.getName(),
-                                  color: dialogViewModel.getColor()?.value,
-                                  count: itemList[index].count,
-                                  photoName: dialogViewModel.getPhotoName(),
-                                  suffixType: dialogViewModel.getSuffixType(),
-                                );
-                                viewModel.removeSaver(itemList[index]);
-                                viewModel.addSaver(updatedSaver, context);
-                              }
-                            }
-                          } else if (result == 'browse') {
-                            String pathToOpen = itemList[index].paths.first;
-                            if (itemList[index].paths.length > 1) {
-                              pathToOpen = await _showPathSelector(itemList[index].paths);
-                              if (pathToOpen.isEmpty) return;
-                            }
-                            if (!mounted) return;
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              backgroundColor: Colors.transparent,
-                              builder: (context) => FileBrowserDialog(
-                                directoryPath: pathToOpen,
-                                onClose: () => Navigator.of(context).pop(),
-                              ),
-                            );
-                          }
-                        },
-                        onPressed: _takePhotos,
-                        child: Badge(
-                            isLabelVisible:
-                                (itemList[index].suffixType % 2 == 0),
-                            backgroundColor: Colors.deepOrange,
-                            offset: Offset(16, -16),
-                            label: Text(itemList[index].count.toString()),
-                            child: Text(itemList[index].name)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: saverColorScheme.primaryContainer,
-                          foregroundColor: saverColorScheme.onPrimaryContainer,
-                        ),
+                        }
+                      },
+                      onPressed: _takePhotos,
+                      child: Badge(
+                        isLabelVisible: (itemList[index].suffixType % 2 == 0),
+                        backgroundColor: Colors.deepOrange,
+                        offset: const Offset(16, -16),
+                        label: Text(itemList[index].count.toString()),
+                        child: Text(itemList[index].name),
                       ),
-                    );
-                  }),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: saverColorScheme.primaryContainer,
+                        foregroundColor: saverColorScheme.onPrimaryContainer,
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
           ],
         );
       },
     );
+  }
+
+  Future<void> _toggleCamera(HomeViewModel viewModel) async {
+    if (cameras.length <= 1) return;
+
+    final newDirection = currentLensDirection == CameraLensDirection.back
+        ? CameraLensDirection.front
+        : CameraLensDirection.back;
+
+    final newIndex = newDirection == CameraLensDirection.back ? 0 : 1;
+    await viewModel.updateCameraLensDirection(newIndex);
+    await _initCameraByDirection(newDirection, currentResolution);
   }
 
   double _zoom2Slider(double zoomValue) {
@@ -495,23 +627,44 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _resetZoomLevel() async {
-    await _controller.initialize();
-    double min = await _controller.getMinZoomLevel();
-    double max = await _controller.getMaxZoomLevel();
+    if (_controller == null || !_controller!.value.isInitialized) return;
+    try {
+      double min = await _controller!.getMinZoomLevel();
+      double max = await _controller!.getMaxZoomLevel();
+      debugPrint('Zoom level range: min=$min, max=$max');
 
-    setState(() {
-      _minZoomLevel = min;
-      _maxZoomLevel = max;
-      _sliderValue = 1;
-    });
+      if (mounted) {
+        setState(() {
+          // If min equals max, camera doesn't support zoom - use default range
+          if (min == max) {
+            _minZoomLevel = 1.0;
+            _maxZoomLevel = 1.0;
+          } else {
+            _minZoomLevel = min;
+            _maxZoomLevel = max;
+          }
+          _sliderValue = _zoom2Slider(1.0);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error resetting zoom level: $e');
+      // Use safe defaults on error
+      if (mounted) {
+        setState(() {
+          _minZoomLevel = 1.0;
+          _maxZoomLevel = 1.0;
+          _sliderValue = 1.0;
+        });
+      }
+    }
   }
 
   void _onCameraPreviewTap(PointerDownEvent event, BoxConstraints constraints) {
+    if (_controller == null || !_controller!.value.isInitialized) return;
     final x = event.localPosition.dx / constraints.maxWidth;
     final y = event.localPosition.dy / constraints.maxHeight;
     debugPrint("onCameraPreviewTap: x: ${x}, y: ${y}");
-
-    _controller.setFocusPoint(Offset(x, y));
+    _controller!.setFocusPoint(Offset(x, y));
   }
 }
 
@@ -520,46 +673,30 @@ String? getPrefixedFileName(Saver saver) {
   if (newName != null) {
     switch (saver.suffixType) {
       case 0:
-        {
-          newName = newName + saver.count.toString();
-        }
+        newName = newName + saver.count.toString();
       case 1:
-        {
-          DateTime now = DateTime.now();
-          String nowStr = DateFormat('yyyyMMddHHmmss').format(now);
-          newName += nowStr;
-        }
+        DateTime now = DateTime.now();
+        String nowStr = DateFormat('yyyyMMddHHmmss').format(now);
+        newName += nowStr;
       case 2:
-        {
-          newName = newName + '_' + saver.count.toString();
-        }
+        newName = newName + '_' + saver.count.toString();
       case 3:
-        {
-          DateTime now = DateTime.now();
-          String nowStr = DateFormat('yyyyMMddHHmmss').format(now);
-          newName += '_' + nowStr;
-        }
+        DateTime now = DateTime.now();
+        String nowStr = DateFormat('yyyyMMddHHmmss').format(now);
+        newName += '_' + nowStr;
       case 4:
-        {
-          newName = newName + '-' + saver.count.toString();
-        }
+        newName = newName + '-' + saver.count.toString();
       case 5:
-        {
-          DateTime now = DateTime.now();
-          String nowStr = DateFormat('yyyyMMddHHmmss').format(now);
-          newName += '-' + nowStr;
-        }
+        DateTime now = DateTime.now();
+        String nowStr = DateFormat('yyyyMMddHHmmss').format(now);
+        newName += '-' + nowStr;
     }
   }
   return newName;
 }
 
-/**
- * 裁剪图片到3:4比例
- */
 Future<bool> handleFileAspectRatio(XFile imageFile) async {
   try {
-    // 读取图片字节
     final bytes = await imageFile.readAsBytes();
     final image = img.decodeImage(bytes);
     if (image == null) {
@@ -569,26 +706,18 @@ Future<bool> handleFileAspectRatio(XFile imageFile) async {
     final int width = image.width;
     final int height = image.height;
 
-    // 若宽高比已为3:4, 不处理
     if ((width * 4).toDouble() == (height * 3).toDouble() ||
         (width / height - 0.75).abs() < 0.01) {
-      // 3:4 比例
       return true;
     }
 
-    // 计算目标高度
     int targetHeight = (width * 4 / 3).round();
-
-    // 如果实际高度小于目标高度, 则不能裁剪
     if (height < targetHeight) {
       debugPrint('图片高度不足以裁剪为3:4, 跳过');
       return false;
     }
 
-    // 取中间部分
     int offsetY = ((height - targetHeight) / 2).round();
-
-    // 裁剪图片
     final cropped = img.copyCrop(
       image,
       x: 0,
@@ -597,13 +726,11 @@ Future<bool> handleFileAspectRatio(XFile imageFile) async {
       height: targetHeight,
     );
 
-    // 重新保存图片（覆盖原文件）
     final extension = path.extension(imageFile.path).toLowerCase();
     List<int> encodedBytes;
     if (extension == ".png") {
       encodedBytes = img.encodePng(cropped);
     } else {
-      // 默认jpg
       encodedBytes = img.encodeJpg(cropped);
     }
     final file = File(imageFile.path);
@@ -618,7 +745,10 @@ Future<bool> handleFileAspectRatio(XFile imageFile) async {
 }
 
 Future<bool> moveXFileToFile(
-    XFile xFile, List<String> destinationPaths, String? newName) async {
+  XFile xFile,
+  List<String> destinationPaths,
+  String? newName,
+) async {
   File sourceFile = File(xFile.path);
   bool isSucceed = true;
 
@@ -629,8 +759,7 @@ Future<bool> moveXFileToFile(
       File destinationFile = File('$destinationPath/$sourceFileName');
 
       if (newName != null) {
-        await sourceFile
-            .copy(destinationFile.parent.path + '/$newName$extension');
+        await sourceFile.copy(destinationFile.parent.path + '/$newName$extension');
       } else {
         await sourceFile.copy(destinationFile.path);
       }
@@ -654,9 +783,7 @@ class FocusBoxPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (boxOffset == null) {
-      return;
-    }
+    if (boxOffset == null) return;
     final Paint paint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
@@ -672,7 +799,5 @@ class FocusBoxPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return true; // 每次都需要重绘
-  }
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

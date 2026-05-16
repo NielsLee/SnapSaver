@@ -38,5 +38,13 @@
     "resolution_uh": "ultraHigh",
     "resolution_max": "max",
     "editSaverButton": "Edit Saver Button",
-    "openAlbumDirectory": "Preview Folder"
+    "openAlbumDirectory": "Preview Folder",
+    "photoSavedTo": "Photo saved to {path}",
+    "@photoSavedTo": {
+        "placeholders": {
+            "path": {
+                "type": "String"
+            }
+        }
+    }
 }

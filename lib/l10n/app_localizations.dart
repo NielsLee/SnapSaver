@@ -337,6 +337,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Preview Folder'**
   String get openAlbumDirectory;
+
+  /// No description provided for @photoSavedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo saved to {path}'**
+  String photoSavedTo(String path);
 }
 
 class _AppLocalizationsDelegate
