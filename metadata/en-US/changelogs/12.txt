@@ -1,0 +1,2 @@
+1. long press saver button to get a preview of files
+2. url fix
