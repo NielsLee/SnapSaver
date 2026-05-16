@@ -123,4 +123,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resolution_max => 'max';
+
+  @override
+  String get editSaverButton => 'Edit Saver Button';
+
+  @override
+  String get openAlbumDirectory => 'Preview Folder';
 }

@@ -11,6 +11,8 @@ import 'package:path/path.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:snap_saver/dialog/insert_saver_dialog.dart';
+import 'package:snap_saver/dialog/saver_long_press_dialog.dart';
+import 'package:snap_saver/dialog/file_browser_dialog.dart';
 import 'package:snap_saver/viewmodel/home_view_model.dart';
 import 'package:vibration/vibration.dart';
 import 'package:path/path.dart' as path;
@@ -378,31 +380,80 @@ class HomeScreenState extends State<HomeScreen> {
                       );
                     }
 
+                    Future<String> _showPathSelector(List<String> paths) async {
+                      String selected = paths.first;
+                      await showDialog<void>(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Text('选择目录'),
+                            content: SizedBox(
+                              width: double.maxFinite,
+                              child: ListView.builder(
+                                shrinkWrap: true,
+                                itemCount: paths.length,
+                                itemBuilder: (context, index) {
+                                  return ListTile(
+                                    title: Text(paths[index]),
+                                    onTap: () {
+                                      selected = paths[index];
+                                      Navigator.of(context).pop();
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                      return selected;
+                    }
+
                     // Saver button
                     return Container(
                       margin: const EdgeInsets.all(4),
                       child: ElevatedButton(
                         onLongPress: () async {
-                          final result = await _showEditDialog();
-                          // 长按的情况只有下面这两种操作 没有创建操作
-                          if (result != null) {
-                            if (result is Map && result['action'] == 'delete') {
-                              // 删除操作
-                              viewModel.removeSaver(itemList[index]);
-                            } else if (result is Map && result['action'] == 'update') {
-                              // 更新操作
-                              final dialogViewModel = result['viewModel'];
-                              final updatedSaver = Saver(
-                                paths: dialogViewModel.getPath(),
-                                name: dialogViewModel.getName(),
-                                color: dialogViewModel.getColor()?.value,
-                                count: itemList[index].count,
-                                photoName: dialogViewModel.getPhotoName(),
-                                suffixType: dialogViewModel.getSuffixType(),
-                              );
-                              viewModel.removeSaver(itemList[index]);
-                              viewModel.addSaver(updatedSaver, context);
+                          final result = await showModalBottomSheet<String>(
+                            context: context,
+                            builder: (context) => SaverLongPressDialog(saver: itemList[index]),
+                          );
+
+                          if (result == 'edit') {
+                            final editResult = await _showEditDialog();
+                            if (editResult != null) {
+                              if (editResult is Map && editResult['action'] == 'delete') {
+                                viewModel.removeSaver(itemList[index]);
+                              } else if (editResult is Map && editResult['action'] == 'update') {
+                                final dialogViewModel = editResult['viewModel'];
+                                final updatedSaver = Saver(
+                                  paths: dialogViewModel.getPath(),
+                                  name: dialogViewModel.getName(),
+                                  color: dialogViewModel.getColor()?.value,
+                                  count: itemList[index].count,
+                                  photoName: dialogViewModel.getPhotoName(),
+                                  suffixType: dialogViewModel.getSuffixType(),
+                                );
+                                viewModel.removeSaver(itemList[index]);
+                                viewModel.addSaver(updatedSaver, context);
+                              }
                             }
+                          } else if (result == 'browse') {
+                            String pathToOpen = itemList[index].paths.first;
+                            if (itemList[index].paths.length > 1) {
+                              pathToOpen = await _showPathSelector(itemList[index].paths);
+                              if (pathToOpen.isEmpty) return;
+                            }
+                            if (!mounted) return;
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (context) => FileBrowserDialog(
+                                directoryPath: pathToOpen,
+                                onClose: () => Navigator.of(context).pop(),
+                              ),
+                            );
                           }
                         },
                         onPressed: _takePhotos,

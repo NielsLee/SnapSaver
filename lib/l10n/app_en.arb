@@ -36,5 +36,7 @@
     "resolution_high": "high",
     "resolution_vh": "veryHigh",
     "resolution_uh": "ultraHigh",
-    "resolution_max": "max"
+    "resolution_max": "max",
+    "editSaverButton": "Edit Saver Button",
+    "openAlbumDirectory": "Preview Folder"
 }

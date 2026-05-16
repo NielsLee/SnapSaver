@@ -325,6 +325,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'max'**
   String get resolution_max;
+
+  /// No description provided for @editSaverButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Saver Button'**
+  String get editSaverButton;
+
+  /// No description provided for @openAlbumDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview Folder'**
+  String get openAlbumDirectory;
 }
 
 class _AppLocalizationsDelegate

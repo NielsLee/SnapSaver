@@ -36,5 +36,7 @@
     "resolution_high": "高",
     "resolution_vh": "超高",
     "resolution_uh": "极高",
-    "resolution_max": "最大"
+    "resolution_max": "最大",
+    "editSaverButton": "编辑拍照键",
+    "openAlbumDirectory": "预览文件夹"
 }

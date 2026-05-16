@@ -122,4 +122,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get resolution_max => '最大';
+
+  @override
+  String get editSaverButton => '编辑拍照键';
+
+  @override
+  String get openAlbumDirectory => '预览文件夹';
 }
