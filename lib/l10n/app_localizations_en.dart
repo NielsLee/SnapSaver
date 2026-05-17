@@ -134,4 +134,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String photoSavedTo(String path) {
     return 'Photo saved to $path';
   }
+
+  @override
+  String get cameraInitFailed => 'Camera initialization failed';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String get selectDirectory => 'Select directory';
+
+  @override
+  String get grainOverlay => 'Film Grain';
+
+  @override
+  String get prefix => 'Prefix';
+
+  @override
+  String get suffix => 'Suffix';
+
+  @override
+  String get separator => 'Separator';
+
+  @override
+  String get pleaseEnterSaverName => 'Please enter a saver name';
+
+  @override
+  String get pleaseSelectPath => 'Please select a save path';
 }

@@ -9,18 +9,20 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
+import 'package:snap_saver/dialog/file_browser_dialog.dart';
 import 'package:snap_saver/dialog/insert_saver_dialog.dart';
 import 'package:snap_saver/dialog/saver_long_press_dialog.dart';
-import 'package:snap_saver/dialog/file_browser_dialog.dart';
-import 'package:snap_saver/viewmodel/home_view_model.dart';
+import 'package:snap_saver/entity/saver.dart';
 import 'package:snap_saver/l10n/app_localizations.dart';
+import 'package:snap_saver/theme/theme.dart';
+import 'package:snap_saver/viewmodel/home_view_model.dart';
+import 'package:snap_saver/widgets/camera_control_bar.dart';
+import 'package:snap_saver/widgets/darkroom_toast.dart';
+import 'package:snap_saver/widgets/saver_button.dart';
 import 'package:vibration/vibration.dart';
 import 'package:path/path.dart' as path;
 import 'package:image/image.dart' as img;
-
-import 'entity/saver.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -56,7 +58,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     setState(() {
       currentResolutionIndex = resolution;
     });
-    // lensDirection: 0 = back, 1 = front
     final direction = lensDirection == 0 ? CameraLensDirection.back : CameraLensDirection.front;
     _initCameraByDirection(direction, _getResolutionPreset(resolution));
   }
@@ -97,7 +98,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       cameras = await availableCameras();
       await Permission.camera.request();
 
-      // Find camera index by direction
       int actualIndex = 0;
       for (int i = 0; i < cameras.length; i++) {
         if (cameras[i].lensDirection == direction) {
@@ -200,7 +200,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     } else if (status.isDenied) {
       // permission denied
     } else if (status.isPermanentlyDenied) {
-      // need go to settings
       await openAppSettings();
     }
   }
@@ -210,7 +209,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final newResolution = context.select<HomeViewModel, int>((vm) => vm.resolution);
     final savedLensDirection = context.select<HomeViewModel, int>((vm) => vm.cameraLensDirection);
 
-    // Initialize camera with saved values on first build
     if (_controller == null && !_isInitializingCamera) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _initCameraFromViewModel(savedLensDirection, newResolution);
@@ -231,14 +229,14 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     return Consumer<HomeViewModel>(
       builder: (BuildContext context, HomeViewModel viewModel, Widget? child) {
         final itemList = viewModel.savers;
-        final saversRowPadding = MediaQuery.of(context).size.width * 0.1;
+        final saversRowPadding = MediaQuery.of(context).size.width * 0.04;
 
         return Column(
           children: [
             AspectRatio(
               aspectRatio: 3 / 4,
               child: Container(
-                padding: const EdgeInsets.all(4),
+                padding: const EdgeInsets.all(AppSpacing.xs),
                 child: FutureBuilder<void>(
                   future: _initializeControllerFuture,
                   builder: (context, snapshot) {
@@ -251,7 +249,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         builder: (BuildContext context, BoxConstraints constraints) {
                           final previewSize = _controller!.value.previewSize;
                           if (previewSize == null || previewSize.height == 0) {
-                            return const Center(child: CircularProgressIndicator());
+                            return const Center(child: CircularProgressIndicator(color: AppColors.accent));
                           }
 
                           final previewAspectRatio = previewSize.height / previewSize.width;
@@ -263,34 +261,51 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             alignment: AlignmentDirectional.bottomCenter,
                             children: <Widget>[
                               ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(AppRadius.md),
                                 child: SizedBox(
                                   width: constraints.maxWidth,
                                   height: constraints.maxWidth * 4 / 3,
                                   child: ClipRect(
                                     child: Align(
                                       alignment: Alignment.center,
-                                      child: Builder(
-                                        builder: (context) {
-                                          return Center(
-                                            child: Transform.scale(
-                                              scale: scale,
-                                              alignment: Alignment.center,
-                                              child: SizedBox(
-                                                width: baseWidth,
-                                                child: AspectRatio(
-                                                  aspectRatio: previewAspectRatio,
-                                                  child: CameraPreview(_controller!),
-                                                ),
-                                              ),
+                                      child: Center(
+                                        child: Transform.scale(
+                                          scale: scale,
+                                          alignment: Alignment.center,
+                                          child: SizedBox(
+                                            width: baseWidth,
+                                            child: AspectRatio(
+                                              aspectRatio: previewAspectRatio,
+                                              child: CameraPreview(_controller!),
                                             ),
-                                          );
-                                        },
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
+                              // Vignette overlay
+                              Positioned.fill(
+                                child: IgnorePointer(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      gradient: RadialGradient(
+                                        center: Alignment.center,
+                                        radius: 1.2,
+                                        colors: [
+                                          Colors.transparent,
+                                          Colors.transparent,
+                                          AppColors.background.withValues(alpha: 0.4),
+                                        ],
+                                        stops: const [0.0, 0.7, 1.0],
+                                      ),
+                                      borderRadius: BorderRadius.circular(AppRadius.md),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              // Focus tap area
                               Positioned.fill(
                                 child: Listener(
                                   onPointerDown: (downEvent) {
@@ -313,84 +328,52 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                   child: Container(color: Colors.transparent),
                                 ),
                               ),
+                              // Focus indicator
                               Positioned.fill(
                                 child: IgnorePointer(
                                   child: CustomPaint(painter: FocusBoxPainter(focusOffset)),
                                 ),
                               ),
-                              SizedBox(
-                                height: 48,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Expanded(
-                                      child: Slider(
-                                        value: _sliderValue,
-                                        min: _zoom2Slider(_minZoomLevel),
-                                        max: _zoom2Slider(_maxZoomLevel),
-                                        onChanged: _minZoomLevel != _maxZoomLevel
-                                            ? (newValue) {
-                                                setState(() {
-                                                  _controller?.setZoomLevel(_slider2Zoom(newValue));
-                                                  _sliderValue = newValue;
-                                                });
-                                              }
-                                            : null,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    PopupMenuButton<int>(
-                                      icon: const Icon(Icons.settings_overscan, color: Colors.black),
-                                      onSelected: (int newResolution) {
-                                        Vibration.vibrate(amplitude: 255, duration: 5);
-                                        viewModel.updateResolution(newResolution);
-                                      },
-                                      itemBuilder: (context) => [
-                                        PopupMenuItem(value: 0, child: Text(AppLocalizations.of(context)!.resolution_low)),
-                                        PopupMenuItem(value: 1, child: Text(AppLocalizations.of(context)!.resolution_medium)),
-                                        PopupMenuItem(value: 2, child: Text(AppLocalizations.of(context)!.resolution_high)),
-                                        PopupMenuItem(value: 3, child: Text(AppLocalizations.of(context)!.resolution_vh)),
-                                        PopupMenuItem(value: 4, child: Text(AppLocalizations.of(context)!.resolution_uh)),
-                                        PopupMenuItem(value: 5, child: Text(AppLocalizations.of(context)!.resolution_max)),
-                                      ],
-                                    ),
-                                    IconButton(
-                                      onPressed: () async {
+                              // Camera control bar
+                              CameraControlBar(
+                                sliderValue: _sliderValue,
+                                minSlider: _zoom2Slider(_minZoomLevel),
+                                maxSlider: _zoom2Slider(_maxZoomLevel),
+                                onSliderChanged: _minZoomLevel != _maxZoomLevel
+                                    ? (newValue) {
                                         setState(() {
-                                          if (currentFlashMode == FlashMode.auto) {
-                                            currentFlashMode = FlashMode.off;
-                                          } else if (currentFlashMode == FlashMode.off) {
-                                            currentFlashMode = FlashMode.always;
-                                          } else {
-                                            currentFlashMode = FlashMode.auto;
-                                          }
+                                          _controller?.setZoomLevel(_slider2Zoom(newValue));
+                                          _sliderValue = newValue;
                                         });
-                                        try {
-                                          await _controller?.setFlashMode(currentFlashMode);
-                                        } catch (e) {
-                                          log('Could not set flash mode: $e');
-                                        }
-                                        Vibration.vibrate(amplitude: 255, duration: 5);
-                                      },
-                                      icon: Icon(
-                                        currentFlashMode == FlashMode.auto
-                                            ? Icons.flash_auto
-                                            : currentFlashMode == FlashMode.off
-                                                ? Icons.flash_off
-                                                : Icons.flash_on,
-                                        color: Colors.black,
-                                      ),
-                                    ),
-                                    IconButton(
-                                      onPressed: () async {
-                                        Vibration.vibrate(amplitude: 255, duration: 5);
-                                        await _toggleCamera(viewModel);
-                                      },
-                                      icon: const Icon(Icons.cameraswitch, color: Colors.black),
-                                    ),
-                                  ],
-                                ),
-                              )
+                                      }
+                                    : null,
+                                flashMode: currentFlashMode,
+                                onFlashToggle: () async {
+                                  setState(() {
+                                    if (currentFlashMode == FlashMode.auto) {
+                                      currentFlashMode = FlashMode.off;
+                                    } else if (currentFlashMode == FlashMode.off) {
+                                      currentFlashMode = FlashMode.always;
+                                    } else {
+                                      currentFlashMode = FlashMode.auto;
+                                    }
+                                  });
+                                  try {
+                                    await _controller?.setFlashMode(currentFlashMode);
+                                  } catch (e) {
+                                    log('Could not set flash mode: $e');
+                                  }
+                                  Vibration.vibrate(amplitude: 255, duration: 5);
+                                },
+                                onCameraSwitch: () async {
+                                  Vibration.vibrate(amplitude: 255, duration: 5);
+                                  await _toggleCamera(viewModel);
+                                },
+                                onResolutionSelected: (newResolution) {
+                                  viewModel.updateResolution(newResolution);
+                                },
+                                currentResolutionIndex: currentResolutionIndex,
+                              ),
                             ],
                           );
                         },
@@ -401,19 +384,20 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Text('相机初始化失败'),
-                              const SizedBox(height: 16),
+                              Text(AppLocalizations.of(context)!.cameraInitFailed,
+                                  style: AppTypography.body().copyWith(color: AppColors.muted)),
+                              const SizedBox(height: AppSpacing.md),
                               ElevatedButton(
                                 onPressed: () {
                                   _initCamera(selectedLensIndex, currentResolution);
                                 },
-                                child: const Text('重试'),
+                                child: Text(AppLocalizations.of(context)!.retry),
                               ),
                             ],
                           ),
                         );
                       }
-                      return const Center(child: CircularProgressIndicator());
+                      return const Center(child: CircularProgressIndicator(color: AppColors.accent));
                     }
                   },
                 ),
@@ -421,22 +405,15 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
             Expanded(
               child: MasonryGridView.builder(
-                padding: EdgeInsets.fromLTRB(saversRowPadding, 0, saversRowPadding, 12),
+                padding: EdgeInsets.fromLTRB(saversRowPadding, 0, saversRowPadding, AppSpacing.md),
                 itemCount: itemList.length,
                 scrollDirection: Axis.horizontal,
                 gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                 ),
                 itemBuilder: (context, index) {
-                  ColorScheme saverColorScheme = ColorScheme.fromSeed(
-                    seedColor: viewModel.seedColor,
-                  );
-
-                  if (itemList[index].color != null) {
-                    saverColorScheme = ColorScheme.fromSeed(
-                      seedColor: Color(itemList[index].color!),
-                    );
-                  }
+                  final saver = itemList[index];
+                  final saverColor = saver.color != null ? Color(saver.color!) : null;
 
                   Future<void> _takePhotos() async {
                     if (isCapturing || _controller == null || !_controller!.value.isInitialized) {
@@ -457,27 +434,18 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       }
 
                       final image = await _controller!.takePicture();
-                      debugPrint(
-                          "take photo result: path: ${image.path} name: ${image.name}");
+                      debugPrint("take photo result: path: ${image.path} name: ${image.name}");
 
                       setState(() => isCapturing = false);
 
                       await _requestStoragePermission();
 
-                      final saver = itemList[index];
                       final paths = saver.paths;
                       final prefixedFileName = getPrefixedFileName(saver);
                       await handleFileAspectRatio(image);
                       final bool isSaved = await moveXFileToFile(image, paths, prefixedFileName);
                       if (isSaved) {
-                        final l10n = AppLocalizations.of(context)!;
-                        Fluttertoast.showToast(
-                          msg: l10n.photoSavedTo(paths.first),
-                          toastLength: Toast.LENGTH_SHORT,
-                          gravity: ToastGravity.BOTTOM,
-                          backgroundColor: Colors.white,
-                          textColor: Colors.black,
-                        );
+                        DarkroomToast.show(AppLocalizations.of(context)!.photoSavedTo(paths.first));
                       }
 
                       saver.count++;
@@ -494,8 +462,17 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     return showGeneralDialog<dynamic>(
                       context: context,
                       barrierDismissible: false,
-                      barrierLabel: "Edit Saver Dialog",
-                      pageBuilder: (BuildContext context, anim1, anmi2) {
+                      barrierColor: AppColors.background.withValues(alpha: 0.7),
+                      transitionBuilder: (context, animation, secondaryAnimation, child) {
+                        return FadeTransition(
+                          opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+                          child: ScaleTransition(
+                            scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+                            child: child,
+                          ),
+                        );
+                      },
+                      pageBuilder: (BuildContext context, anim1, anim2) {
                         return InsertSaverDialog(saver: itemList[index]);
                       },
                     );
@@ -507,7 +484,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       context: context,
                       builder: (BuildContext context) {
                         return AlertDialog(
-                          title: const Text('选择目录'),
+                          title: Text(AppLocalizations.of(context)!.selectDirectory),
                           content: SizedBox(
                             width: double.maxFinite,
                             child: ListView.builder(
@@ -530,64 +507,54 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     return selected;
                   }
 
-                  return Container(
-                    margin: const EdgeInsets.all(4),
-                    child: ElevatedButton(
-                      onLongPress: () async {
-                        final result = await showModalBottomSheet<String>(
-                          context: context,
-                          builder: (context) => SaverLongPressDialog(saver: itemList[index]),
-                        );
-                        if (result == 'edit') {
-                          final editResult = await _showEditDialog();
-                          if (editResult != null) {
-                            if (editResult is Map && editResult['action'] == 'delete') {
-                              viewModel.removeSaver(itemList[index]);
-                            } else if (editResult is Map && editResult['action'] == 'update') {
-                              final dialogViewModel = editResult['viewModel'];
-                              final updatedSaver = Saver(
-                                paths: dialogViewModel.getPath(),
-                                name: dialogViewModel.getName(),
-                                color: dialogViewModel.getColor()?.value,
-                                count: itemList[index].count,
-                                photoName: dialogViewModel.getPhotoName(),
-                                suffixType: dialogViewModel.getSuffixType(),
-                              );
-                              viewModel.removeSaver(itemList[index]);
-                              viewModel.addSaver(updatedSaver, context);
-                            }
+                  return SaverButton(
+                    name: saver.name,
+                    count: saver.count,
+                    showBadge: saver.suffixType % 2 == 0,
+                    saverColor: saverColor,
+                    onPressed: _takePhotos,
+                    onLongPress: () async {
+                      final result = await showModalBottomSheet<String>(
+                        context: context,
+                        builder: (context) => SaverLongPressDialog(saver: itemList[index]),
+                      );
+                      if (result == 'edit') {
+                        final editResult = await _showEditDialog();
+                        if (editResult != null) {
+                          if (editResult is Map && editResult['action'] == 'delete') {
+                            viewModel.removeSaver(itemList[index]);
+                          } else if (editResult is Map && editResult['action'] == 'update') {
+                            final dialogViewModel = editResult['viewModel'];
+                            final updatedSaver = Saver(
+                              paths: dialogViewModel.getPath(),
+                              name: dialogViewModel.getName(),
+                              color: dialogViewModel.getColor()?.toARGB32(),
+                              count: itemList[index].count,
+                              photoName: dialogViewModel.getPhotoName(),
+                              suffixType: dialogViewModel.getSuffixType(),
+                            );
+                            viewModel.removeSaver(itemList[index]);
+                            viewModel.addSaver(updatedSaver, context);
                           }
-                        } else if (result == 'browse') {
-                          String pathToOpen = itemList[index].paths.first;
-                          if (itemList[index].paths.length > 1) {
-                            pathToOpen = await _showPathSelector(itemList[index].paths);
-                            if (pathToOpen.isEmpty) return;
-                          }
-                          if (!mounted) return;
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (context) => FileBrowserDialog(
-                              directoryPath: pathToOpen,
-                              onClose: () => Navigator.of(context).pop(),
-                            ),
-                          );
                         }
-                      },
-                      onPressed: _takePhotos,
-                      child: Badge(
-                        isLabelVisible: (itemList[index].suffixType % 2 == 0),
-                        backgroundColor: Colors.deepOrange,
-                        offset: const Offset(16, -16),
-                        label: Text(itemList[index].count.toString()),
-                        child: Text(itemList[index].name),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: saverColorScheme.primaryContainer,
-                        foregroundColor: saverColorScheme.onPrimaryContainer,
-                      ),
-                    ),
+                      } else if (result == 'browse') {
+                        String pathToOpen = itemList[index].paths.first;
+                        if (itemList[index].paths.length > 1) {
+                          pathToOpen = await _showPathSelector(itemList[index].paths);
+                          if (pathToOpen.isEmpty) return;
+                        }
+                        if (!mounted) return;
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (context) => FileBrowserDialog(
+                            directoryPath: pathToOpen,
+                            onClose: () => Navigator.of(context).pop(),
+                          ),
+                        );
+                      }
+                    },
                   );
                 },
               ),
@@ -635,7 +602,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
       if (mounted) {
         setState(() {
-          // If min equals max, camera doesn't support zoom - use default range
           if (min == max) {
             _minZoomLevel = 1.0;
             _maxZoomLevel = 1.0;
@@ -648,7 +614,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       }
     } catch (e) {
       debugPrint('Error resetting zoom level: $e');
-      // Use safe defaults on error
       if (mounted) {
         setState(() {
           _minZoomLevel = 1.0;
@@ -700,7 +665,7 @@ Future<bool> handleFileAspectRatio(XFile imageFile) async {
     final bytes = await imageFile.readAsBytes();
     final image = img.decodeImage(bytes);
     if (image == null) {
-      debugPrint('无法解析图片内容');
+      debugPrint('Unable to decode image');
       return false;
     }
     final int width = image.width;
@@ -713,7 +678,7 @@ Future<bool> handleFileAspectRatio(XFile imageFile) async {
 
     int targetHeight = (width * 4 / 3).round();
     if (height < targetHeight) {
-      debugPrint('图片高度不足以裁剪为3:4, 跳过');
+      debugPrint('Image height insufficient for 3:4 crop');
       return false;
     }
 
@@ -778,6 +743,7 @@ Future<bool> moveXFileToFile(
 class FocusBoxPainter extends CustomPainter {
   final Offset? boxOffset;
   final double boxSize = 50;
+  final double cornerLength = 12;
 
   FocusBoxPainter(this.boxOffset);
 
@@ -785,17 +751,29 @@ class FocusBoxPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (boxOffset == null) return;
     final Paint paint = Paint()
-      ..color = Colors.white
+      ..color = AppColors.accent
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
 
-    final Rect rect = Rect.fromLTWH(
-      boxOffset!.dx - boxSize / 2,
-      boxOffset!.dy - boxSize / 2,
-      boxSize,
-      boxSize,
-    );
-    canvas.drawRect(rect, paint);
+    final double left = boxOffset!.dx - boxSize / 2;
+    final double top = boxOffset!.dy - boxSize / 2;
+    final double right = boxOffset!.dx + boxSize / 2;
+    final double bottom = boxOffset!.dy + boxSize / 2;
+
+    // Draw only corners for a film-camera focus aesthetic
+    // Top-left
+    canvas.drawLine(Offset(left, top + cornerLength), Offset(left, top), paint);
+    canvas.drawLine(Offset(left, top), Offset(left + cornerLength, top), paint);
+    // Top-right
+    canvas.drawLine(Offset(right - cornerLength, top), Offset(right, top), paint);
+    canvas.drawLine(Offset(right, top), Offset(right, top + cornerLength), paint);
+    // Bottom-left
+    canvas.drawLine(Offset(left, bottom - cornerLength), Offset(left, bottom), paint);
+    canvas.drawLine(Offset(left, bottom), Offset(left + cornerLength, bottom), paint);
+    // Bottom-right
+    canvas.drawLine(Offset(right - cornerLength, bottom), Offset(right, bottom), paint);
+    canvas.drawLine(Offset(right, bottom - cornerLength), Offset(right, bottom), paint);
   }
 
   @override

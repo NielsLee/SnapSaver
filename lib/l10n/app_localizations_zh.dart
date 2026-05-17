@@ -133,4 +133,31 @@ class AppLocalizationsZh extends AppLocalizations {
   String photoSavedTo(String path) {
     return '图片已保存到$path';
   }
+
+  @override
+  String get cameraInitFailed => '相机初始化失败';
+
+  @override
+  String get retry => '重试';
+
+  @override
+  String get selectDirectory => '选择目录';
+
+  @override
+  String get grainOverlay => '胶片颗粒';
+
+  @override
+  String get prefix => '前缀';
+
+  @override
+  String get suffix => '后缀';
+
+  @override
+  String get separator => '连接符';
+
+  @override
+  String get pleaseEnterSaverName => '请输入拍照键名称';
+
+  @override
+  String get pleaseSelectPath => '请选择保存路径';
 }

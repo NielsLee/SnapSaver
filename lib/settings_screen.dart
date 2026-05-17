@@ -1,12 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:snap_saver/l10n/app_localizations.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:provider/provider.dart';
-import 'package:vibration/vibration.dart';
-import 'package:snap_saver/viewmodel/home_view_model.dart';
+import 'package:snap_saver/theme/theme.dart';
+import 'package:snap_saver/widgets/darkroom_card.dart';
+import 'package:snap_saver/widgets/darkroom_toast.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -16,118 +13,75 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class SettingsScreenState extends State<SettingsScreen> {
-  bool isAddButtonShown = true;
-  bool isColorMenuExpanded = false;
-
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      children: [
-        Divider(height: 0),
-        Container(
-          padding: const EdgeInsets.all(8),
-          child: Row(
-            children: [
-              Padding(padding: EdgeInsets.fromLTRB(16, 0, 0, 0)),
-              Text(AppLocalizations.of(context)!.contactDeveloper,
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              const Spacer(),
-              IconButton(
-                  onPressed: _showThanks, icon: const Icon(Icons.thumb_up)),
-              IconButton(onPressed: _launchMail, icon: const Icon(Icons.mail))
-            ],
+    final l10n = AppLocalizations.of(context)!;
+
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: AppSpacing.lg),
+
+          // Contact Developer
+          DarkroomCard(
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(l10n.contactDeveloper,
+                      style: AppTypography.subheading()),
+                ),
+                IconButton(
+                  onPressed: _showThanks,
+                  icon: const Icon(Icons.thumb_up, color: AppColors.accent),
+                ),
+                IconButton(
+                  onPressed: _launchMail,
+                  icon: const Icon(Icons.mail, color: AppColors.accent2),
+                ),
+              ],
+            ),
           ),
-        ),
-        Divider(height: 0),
-        Container(
-          padding: const EdgeInsets.all(8),
-          child: Row(
-            children: [
-              Padding(padding: EdgeInsets.fromLTRB(16, 0, 0, 0)),
-              Text(AppLocalizations.of(context)!.browseSourceCode,
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              const Spacer(),
-              IconButton(
-                  onPressed: () {
-                    _launchGithub();
-                  },
+
+          // Browse Source Code
+          DarkroomCard(
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(l10n.browseSourceCode,
+                      style: AppTypography.subheading()),
+                ),
+                IconButton(
+                  onPressed: _launchGithub,
                   icon: const ImageIcon(
                     AssetImage('assets/icons/github_mark.png'),
                     size: 24.0,
-                  ))
-            ],
-          ),
-        ),
-        Divider(height: 0),
-        Container(
-          padding: const EdgeInsets.all(8),
-          child: Row(
-            children: [
-              Padding(padding: EdgeInsets.fromLTRB(16, 0, 0, 0)),
-              Text(AppLocalizations.of(context)!.buy_me_coffee,
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              const Spacer(),
-              IconButton(
-                  onPressed: () {
-                    _launchCoffee();
-                  },
-                  icon: const Icon(Icons.coffee))
-            ],
-          ),
-        ),
-        Divider(height: 0),
-        Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              child: Row(
-                children: [
-                  Padding(padding: EdgeInsets.fromLTRB(16, 0, 0, 0)),
-                  Text(AppLocalizations.of(context)!.color_scheme,
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  const Spacer(),
-                  IconButton(
-                      onPressed: () {
-                        setState(() {
-                          isColorMenuExpanded = !isColorMenuExpanded;
-                        });
-                      },
-                      icon: Icon(isColorMenuExpanded
-                          ? Icons.expand_less
-                          : Icons.expand_more))
-                ],
-              ),
-            ),
-            if (isColorMenuExpanded)
-              Container(
-                padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      const SizedBox(width: 8),
-                      _buildColorButton(Colors.red),
-                      const SizedBox(width: 8),
-                      _buildColorButton(Colors.orange),
-                      const SizedBox(width: 8),
-                      _buildColorButton(Colors.yellow),
-                      const SizedBox(width: 8),
-                      _buildColorButton(Colors.green),
-                      const SizedBox(width: 8),
-                      _buildColorButton(Colors.cyan),
-                      const SizedBox(width: 8),
-                      _buildColorButton(Colors.blue),
-                      const SizedBox(width: 8),
-                      _buildColorButton(Colors.purple),
-                      const SizedBox(width: 8),
-                    ],
+                    color: AppColors.text,
                   ),
                 ),
-              ),
-          ],
-        ),
-        Divider(height: 0),
-      ],
+              ],
+            ),
+          ),
+
+          // Buy Coffee
+          DarkroomCard(
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(l10n.buy_me_coffee,
+                      style: AppTypography.subheading()),
+                ),
+                IconButton(
+                  onPressed: _launchCoffee,
+                  icon: const Icon(Icons.coffee, color: AppColors.accent2),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.xl),
+        ],
+      ),
     );
   }
 
@@ -135,7 +89,7 @@ class SettingsScreenState extends State<SettingsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(AppLocalizations.of(context)!.thankForCharlie),
-        duration: Duration(seconds: 2),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -150,13 +104,7 @@ class SettingsScreenState extends State<SettingsScreen> {
     );
 
     if (!await launchUrl(emailUrl)) {
-      Fluttertoast.showToast(
-        msg: '☹️Failed to launch email',
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.white,
-        textColor: Colors.black,
-      );
+      DarkroomToast.show('☹️Failed to launch email');
     }
   }
 
@@ -164,71 +112,15 @@ class SettingsScreenState extends State<SettingsScreen> {
     final Uri githubUrl = Uri.parse('https://github.com/NielsLee/SnapSaver');
 
     if (!await launchUrl(githubUrl)) {
-      Fluttertoast.showToast(
-        msg: '☹️Failed to launch Github',
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        backgroundColor: Colors.white,
-        textColor: Colors.black,
-      );
+      DarkroomToast.show('☹️Failed to launch Github');
     }
   }
 
   Future<void> _launchCoffee() async {
     final Uri coffeeUrl = Uri.parse('https://ko-fi.com/nielslee');
 
-    Fluttertoast.showToast(
-      msg: '😊Have a nice day!',
-      toastLength: Toast.LENGTH_SHORT,
-      gravity: ToastGravity.BOTTOM,
-      backgroundColor: Colors.white,
-      textColor: Colors.black,
-    );
-
-    // await Future.delayed(Duration(milliseconds: 100));
-
-    Fluttertoast.showToast(
-      msg: '😊Have a nice day!',
-      toastLength: Toast.LENGTH_LONG,
-      gravity: ToastGravity.CENTER,
-      backgroundColor: Colors.white,
-      textColor: Colors.black,
-    );
+    DarkroomToast.show('😊Have a nice day!');
 
     await launchUrl(coffeeUrl);
-  }
-
-  Widget _buildColorButton(Color color) {
-    return Consumer<HomeViewModel>(
-      builder: (context, viewModel, child) {
-        final isSelected = viewModel.seedColor.value == color.value;
-        return GestureDetector(
-          onTap: () {
-            viewModel.updateSeedColor(color);
-            Vibration.vibrate(amplitude: 255, duration: 5);
-          },
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isSelected ? Colors.white : Colors.transparent,
-                width: 3,
-                
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
   }
 }

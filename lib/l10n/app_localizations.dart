@@ -343,6 +343,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Photo saved to {path}'**
   String photoSavedTo(String path);
+
+  /// No description provided for @cameraInitFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera initialization failed'**
+  String get cameraInitFailed;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @selectDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Select directory'**
+  String get selectDirectory;
+
+  /// No description provided for @grainOverlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Film Grain'**
+  String get grainOverlay;
+
+  /// No description provided for @prefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Prefix'**
+  String get prefix;
+
+  /// No description provided for @suffix.
+  ///
+  /// In en, this message translates to:
+  /// **'Suffix'**
+  String get suffix;
+
+  /// No description provided for @separator.
+  ///
+  /// In en, this message translates to:
+  /// **'Separator'**
+  String get separator;
+
+  /// No description provided for @pleaseEnterSaverName.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a saver name'**
+  String get pleaseEnterSaverName;
+
+  /// No description provided for @pleaseSelectPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a save path'**
+  String get pleaseSelectPath;
 }
 
 class _AppLocalizationsDelegate

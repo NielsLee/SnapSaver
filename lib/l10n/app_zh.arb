@@ -46,5 +46,14 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "cameraInitFailed": "相机初始化失败",
+    "retry": "重试",
+    "selectDirectory": "选择目录",
+    "grainOverlay": "胶片颗粒",
+    "prefix": "前缀",
+    "suffix": "后缀",
+    "separator": "连接符",
+    "pleaseEnterSaverName": "请输入拍照键名称",
+    "pleaseSelectPath": "请选择保存路径"
 }

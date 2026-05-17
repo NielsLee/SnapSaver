@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:snap_saver/dialog/help_dialog.dart';
 import 'package:snap_saver/dialog/insert_saver_dialog.dart';
 import 'package:snap_saver/settings_screen.dart';
+import 'package:snap_saver/theme/theme.dart';
 import 'package:snap_saver/viewmodel/dialog_view_model.dart';
 import 'package:snap_saver/viewmodel/home_view_model.dart';
 import 'package:snap_saver/l10n/app_localizations.dart';
@@ -14,8 +15,12 @@ import 'home_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(systemNavigationBarColor: Colors.transparent));
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    systemNavigationBarColor: Colors.transparent,
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+    systemNavigationBarIconBrightness: Brightness.light,
+  ));
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   // Only support protrait layout now
@@ -48,16 +53,8 @@ class MainAppState extends State<MainApp> {
     return MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: context.watch<HomeViewModel>().seedColor,
-        ),
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: context.watch<HomeViewModel>().seedColor,
-        ),
-      ),
+      theme: AppTheme.buildTheme(),
+      themeMode: ThemeMode.dark,
       home: const MainScaffold(),
     );
   }
@@ -83,15 +80,14 @@ class MainScaffoldState extends State<MainScaffold> {
       return Scaffold(
         appBar: AppBar(
           title: Text(AppLocalizations.of(context)!.appTitle),
-          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
           actions: [
             IconButton(
                 onPressed: () {
                   Vibration.vibrate(amplitude: 255, duration: 5);
                   _showHelpDialog();
                 },
-                icon: Icon(Icons.help_outline)),
-            Padding(padding: EdgeInsets.fromLTRB(0, 0, 8, 0))
+                icon: const Icon(Icons.help_outline, color: AppColors.muted)),
+            const Padding(padding: EdgeInsets.fromLTRB(0, 0, 8, 0))
           ],
         ),
         body: _screens[_selectedIndex],
@@ -102,7 +98,7 @@ class MainScaffoldState extends State<MainScaffold> {
               final newSaver = Saver(
                   paths: dialogViewModel.getPath(),
                   name: dialogViewModel.getName(),
-                  color: dialogViewModel.getColor()?.value,
+                  color: dialogViewModel.getColor()?.toARGB32(),
                   photoName: dialogViewModel.getPhotoName(),
                   suffixType: dialogViewModel.getSuffixType());
 
@@ -123,7 +119,10 @@ class MainScaffoldState extends State<MainScaffold> {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               IconButton(
-                icon: const Icon(Icons.home),
+                icon: Icon(Icons.home,
+                    color: _selectedIndex == 0
+                        ? AppColors.accent
+                        : AppColors.muted),
                 onPressed: () {
                   Vibration.vibrate(amplitude: 255, duration: 5);
                   setState(() {
@@ -132,7 +131,10 @@ class MainScaffoldState extends State<MainScaffold> {
                 },
               ),
               IconButton(
-                icon: const Icon(Icons.settings),
+                icon: Icon(Icons.settings,
+                    color: _selectedIndex == 1
+                        ? AppColors.accent
+                        : AppColors.muted),
                 onPressed: () {
                   Vibration.vibrate(amplitude: 255, duration: 5);
                   setState(() {
@@ -152,7 +154,17 @@ class MainScaffoldState extends State<MainScaffold> {
     return showGeneralDialog<DialogViewModel>(
       context: context,
       barrierDismissible: false,
-      pageBuilder: (BuildContext context, anim1, anmi2) {
+      barrierColor: AppColors.background.withValues(alpha: 0.7),
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+          child: ScaleTransition(
+            scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+            child: child,
+          ),
+        );
+      },
+      pageBuilder: (BuildContext context, anim1, anim2) {
         return const InsertSaverDialog();
       },
     );
@@ -162,8 +174,15 @@ class MainScaffoldState extends State<MainScaffold> {
     return showGeneralDialog<void>(
       context: context,
       barrierDismissible: true,
+      barrierColor: AppColors.background.withValues(alpha: 0.7),
       barrierLabel: "Help Dialog",
-      pageBuilder: (BuildContext context, anim1, anmi2) {
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+          child: child,
+        );
+      },
+      pageBuilder: (BuildContext context, anim1, anim2) {
         return HelpDialog();
       },
     );

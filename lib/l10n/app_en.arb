@@ -46,5 +46,14 @@
                 "type": "String"
             }
         }
-    }
+    },
+    "cameraInitFailed": "Camera initialization failed",
+    "retry": "Retry",
+    "selectDirectory": "Select directory",
+    "grainOverlay": "Film Grain",
+    "prefix": "Prefix",
+    "suffix": "Suffix",
+    "separator": "Separator",
+    "pleaseEnterSaverName": "Please enter a saver name",
+    "pleaseSelectPath": "Please select a save path"
 }

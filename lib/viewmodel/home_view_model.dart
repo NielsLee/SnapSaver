@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeViewModel extends ChangeNotifier {
   final List<Saver> _saverList = [];
-  Color _seedColor = Colors.green;
   int _resolution = 0;
   int _cameraLensDirection = 0; // 0 = back, 1 = front
   static const String _resolutionKey = 'resolution';
@@ -14,29 +13,13 @@ class HomeViewModel extends ChangeNotifier {
 
   HomeViewModel() {
     _initSavers();
-    _loadSeedColor();
     _loadResolution();
     _loadCameraLensDirection();
   }
 
   List<Saver> get savers => _saverList;
-  Color get seedColor => _seedColor;
   int get resolution => _resolution;
   int get cameraLensDirection => _cameraLensDirection;
-
-  Future<void> _loadSeedColor() async {
-    final prefs = await SharedPreferences.getInstance();
-    final colorValue = prefs.getInt('seed_color') ?? Colors.green.value;
-    _seedColor = Color(colorValue);
-    notifyListeners();
-  }
-
-  Future<void> updateSeedColor(Color color) async {
-    _seedColor = color;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('seed_color', color.value);
-    notifyListeners();
-  }
 
   Future<void> _loadResolution() async {
     final prefs = await SharedPreferences.getInstance();
