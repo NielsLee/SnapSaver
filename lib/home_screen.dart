@@ -23,7 +23,7 @@ import 'package:snap_saver/widgets/darkroom_toast.dart';
 import 'package:snap_saver/widgets/saver_button.dart';
 import 'package:vibration/vibration.dart';
 import 'package:path/path.dart' as path;
-import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:gal/gal.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 
@@ -49,6 +49,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   var currentLensDirection = CameraLensDirection.back;
   FlashMode currentFlashMode = FlashMode.auto;
   bool _isInitializingCamera = false;
+  // Holds a resolution change requested while the camera was busy initializing,
+  // so we can re-init with the right preset as soon as the current init finishes.
+  int? _pendingResolutionIndex;
 
   @override
   void initState() {
@@ -61,7 +64,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     setState(() {
       currentResolutionIndex = resolution;
     });
-    final direction = lensDirection == 0 ? CameraLensDirection.back : CameraLensDirection.front;
+    final direction = lensDirection == 0
+        ? CameraLensDirection.back
+        : CameraLensDirection.front;
     _initCameraByDirection(direction, _getResolutionPreset(resolution));
   }
 
@@ -91,7 +96,8 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _initCameraByDirection(CameraLensDirection direction, ResolutionPreset resolution) async {
+  Future<void> _initCameraByDirection(
+      CameraLensDirection direction, ResolutionPreset resolution) async {
     if (_isInitializingCamera) return;
     _isInitializingCamera = true;
 
@@ -143,6 +149,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       }
     } finally {
       _isInitializingCamera = false;
+      _flushPendingResolution();
     }
   }
 
@@ -192,7 +199,20 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       }
     } finally {
       _isInitializingCamera = false;
+      _flushPendingResolution();
     }
+  }
+
+  void _flushPendingResolution() {
+    final pending = _pendingResolutionIndex;
+    if (pending == null) return;
+    _pendingResolutionIndex = null;
+    if (!mounted) return;
+    if (pending == currentResolutionIndex) return;
+    setState(() {
+      currentResolutionIndex = pending;
+    });
+    _initCamera(selectedLensIndex, _getResolutionPreset(pending));
   }
 
   Future<void> _requestStoragePermission() async {
@@ -208,26 +228,38 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final newResolution = context.select<HomeViewModel, int>((vm) => vm.resolution);
-    final savedLensDirection = context.select<HomeViewModel, int>((vm) => vm.cameraLensDirection);
+    final prefsLoaded =
+        context.select<HomeViewModel, bool>((vm) => vm.prefsLoaded);
+    final newResolution =
+        context.select<HomeViewModel, int>((vm) => vm.resolution);
+    final savedLensDirection =
+        context.select<HomeViewModel, int>((vm) => vm.cameraLensDirection);
 
-    if (_controller == null && !_isInitializingCamera) {
+    // Only start initializing the camera once the persisted preferences are
+    // actually loaded, otherwise on first launch we would initialize with the
+    // default (low) resolution and the preview stays blurry until the user
+    // manually changes it.
+    if (prefsLoaded && _controller == null && !_isInitializingCamera) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _initCameraFromViewModel(savedLensDirection, newResolution);
       });
     }
 
-    if (newResolution != currentResolutionIndex) {
+    if (prefsLoaded && newResolution != currentResolutionIndex) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            currentResolutionIndex = newResolution;
-          });
-          _initCamera(selectedLensIndex, _getResolutionPreset(newResolution));
+        if (!mounted) return;
+        if (_isInitializingCamera) {
+          // Queue the latest requested resolution; it will be applied as soon
+          // as the in-flight initialization completes.
+          _pendingResolutionIndex = newResolution;
+          return;
         }
+        setState(() {
+          currentResolutionIndex = newResolution;
+        });
+        _initCamera(selectedLensIndex, _getResolutionPreset(newResolution));
       });
     }
-
     return Consumer<HomeViewModel>(
       builder: (BuildContext context, HomeViewModel viewModel, Widget? child) {
         final itemList = viewModel.savers;
@@ -248,13 +280,17 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         _controller != null &&
                         _controller!.value.isInitialized) {
                       return LayoutBuilder(
-                        builder: (BuildContext context, BoxConstraints constraints) {
+                        builder:
+                            (BuildContext context, BoxConstraints constraints) {
                           final previewSize = _controller!.value.previewSize;
                           if (previewSize == null || previewSize.height == 0) {
-                            return const Center(child: CircularProgressIndicator(color: AppColors.accent));
+                            return const Center(
+                                child: CircularProgressIndicator(
+                                    color: AppColors.accent));
                           }
 
-                          final previewAspectRatio = previewSize.height / previewSize.width;
+                          final previewAspectRatio =
+                              previewSize.height / previewSize.width;
                           final targetWidth = constraints.maxWidth;
                           const baseWidth = 100.0;
                           final scale = targetWidth / baseWidth;
@@ -263,7 +299,8 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             alignment: AlignmentDirectional.bottomCenter,
                             children: <Widget>[
                               ClipRRect(
-                                borderRadius: BorderRadius.circular(AppRadius.md),
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.md),
                                 child: SizedBox(
                                   width: constraints.maxWidth,
                                   height: constraints.maxWidth * 4 / 3,
@@ -278,7 +315,8 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                             width: baseWidth,
                                             child: AspectRatio(
                                               aspectRatio: previewAspectRatio,
-                                              child: CameraPreview(_controller!),
+                                              child:
+                                                  CameraPreview(_controller!),
                                             ),
                                           ),
                                         ),
@@ -298,11 +336,13 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                         colors: [
                                           Colors.transparent,
                                           Colors.transparent,
-                                          AppColors.background.withValues(alpha: 0.4),
+                                          AppColors.background
+                                              .withValues(alpha: 0.4),
                                         ],
                                         stops: const [0.0, 0.7, 1.0],
                                       ),
-                                      borderRadius: BorderRadius.circular(AppRadius.md),
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.md),
                                     ),
                                   ),
                                 ),
@@ -333,7 +373,8 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               // Focus indicator
                               Positioned.fill(
                                 child: IgnorePointer(
-                                  child: CustomPaint(painter: FocusBoxPainter(focusOffset)),
+                                  child: CustomPaint(
+                                      painter: FocusBoxPainter(focusOffset)),
                                 ),
                               ),
                               // Camera control bar
@@ -344,7 +385,8 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 onSliderChanged: _minZoomLevel != _maxZoomLevel
                                     ? (newValue) {
                                         setState(() {
-                                          _controller?.setZoomLevel(_slider2Zoom(newValue));
+                                          _controller?.setZoomLevel(
+                                              _slider2Zoom(newValue));
                                           _sliderValue = newValue;
                                         });
                                       }
@@ -354,21 +396,25 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                   setState(() {
                                     if (currentFlashMode == FlashMode.auto) {
                                       currentFlashMode = FlashMode.off;
-                                    } else if (currentFlashMode == FlashMode.off) {
+                                    } else if (currentFlashMode ==
+                                        FlashMode.off) {
                                       currentFlashMode = FlashMode.always;
                                     } else {
                                       currentFlashMode = FlashMode.auto;
                                     }
                                   });
                                   try {
-                                    await _controller?.setFlashMode(currentFlashMode);
+                                    await _controller
+                                        ?.setFlashMode(currentFlashMode);
                                   } catch (e) {
                                     log('Could not set flash mode: $e');
                                   }
-                                  Vibration.vibrate(amplitude: 255, duration: 5);
+                                  Vibration.vibrate(
+                                      amplitude: 255, duration: 5);
                                 },
                                 onCameraSwitch: () async {
-                                  Vibration.vibrate(amplitude: 255, duration: 5);
+                                  Vibration.vibrate(
+                                      amplitude: 255, duration: 5);
                                   await _toggleCamera(viewModel);
                                 },
                                 onResolutionSelected: (newResolution) {
@@ -386,20 +432,27 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(AppLocalizations.of(context)!.cameraInitFailed,
-                                  style: AppTypography.body().copyWith(color: AppColors.muted)),
+                              Text(
+                                  AppLocalizations.of(context)!
+                                      .cameraInitFailed,
+                                  style: AppTypography.body()
+                                      .copyWith(color: AppColors.muted)),
                               const SizedBox(height: AppSpacing.md),
                               ElevatedButton(
                                 onPressed: () {
-                                  _initCamera(selectedLensIndex, currentResolution);
+                                  _initCamera(
+                                      selectedLensIndex, currentResolution);
                                 },
-                                child: Text(AppLocalizations.of(context)!.retry),
+                                child:
+                                    Text(AppLocalizations.of(context)!.retry),
                               ),
                             ],
                           ),
                         );
                       }
-                      return const Center(child: CircularProgressIndicator(color: AppColors.accent));
+                      return const Center(
+                          child: CircularProgressIndicator(
+                              color: AppColors.accent));
                     }
                   },
                 ),
@@ -407,18 +460,23 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
             Expanded(
               child: MasonryGridView.builder(
-                padding: EdgeInsets.fromLTRB(saversRowPadding, 0, saversRowPadding, AppSpacing.md),
+                padding: EdgeInsets.fromLTRB(
+                    saversRowPadding, 0, saversRowPadding, AppSpacing.md),
                 itemCount: itemList.length,
                 scrollDirection: Axis.horizontal,
-                gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(
+                gridDelegate:
+                    const SliverSimpleGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                 ),
                 itemBuilder: (context, index) {
                   final saver = itemList[index];
-                  final saverColor = saver.color != null ? Color(saver.color!) : null;
+                  final saverColor =
+                      saver.color != null ? Color(saver.color!) : null;
 
                   Future<void> _takePhotos() async {
-                    if (isCapturing || _controller == null || !_controller!.value.isInitialized) {
+                    if (isCapturing ||
+                        _controller == null ||
+                        !_controller!.value.isInitialized) {
                       return;
                     }
                     try {
@@ -427,7 +485,8 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       setState(() => isCapturing = true);
 
                       await Vibration.vibrate(amplitude: 255, duration: 5);
-                      await AudioPlayer().play(AssetSource('sounds/camera_shutter.mp3'));
+                      await AudioPlayer()
+                          .play(AssetSource('sounds/camera_shutter.mp3'));
 
                       try {
                         await _controller!.setFlashMode(currentFlashMode);
@@ -436,7 +495,8 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       }
 
                       final image = await _controller!.takePicture();
-                      debugPrint("take photo result: path: ${image.path} name: ${image.name}");
+                      debugPrint(
+                          "take photo result: path: ${image.path} name: ${image.name}");
 
                       setState(() => isCapturing = false);
 
@@ -445,9 +505,11 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       final paths = saver.paths;
                       final prefixedFileName = getPrefixedFileName(saver);
                       await handleFileAspectRatio(image);
-                      final bool isSaved = await moveXFileToFile(image, paths, prefixedFileName);
+                      final bool isSaved =
+                          await moveXFileToFile(image, paths, prefixedFileName);
                       if (isSaved) {
-                        DarkroomToast.show(AppLocalizations.of(context)!.photoSavedTo(basename(paths.first)));
+                        DarkroomToast.show(AppLocalizations.of(context)!
+                            .photoSavedTo(basename(paths.first)));
                       }
 
                       saver.count++;
@@ -465,11 +527,14 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       context: context,
                       barrierDismissible: false,
                       barrierColor: AppColors.background.withValues(alpha: 0.7),
-                      transitionBuilder: (context, animation, secondaryAnimation, child) {
+                      transitionBuilder:
+                          (context, animation, secondaryAnimation, child) {
                         return FadeTransition(
-                          opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+                          opacity: CurvedAnimation(
+                              parent: animation, curve: Curves.easeOut),
                           child: ScaleTransition(
-                            scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+                            scale: CurvedAnimation(
+                                parent: animation, curve: Curves.easeOutBack),
                             child: child,
                           ),
                         );
@@ -486,7 +551,8 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       context: context,
                       builder: (BuildContext context) {
                         return AlertDialog(
-                          title: Text(AppLocalizations.of(context)!.selectDirectory),
+                          title: Text(
+                              AppLocalizations.of(context)!.selectDirectory),
                           content: SizedBox(
                             width: double.maxFinite,
                             child: ListView.builder(
@@ -518,14 +584,17 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     onLongPress: () async {
                       final result = await showModalBottomSheet<String>(
                         context: context,
-                        builder: (context) => SaverLongPressDialog(saver: itemList[index]),
+                        builder: (context) =>
+                            SaverLongPressDialog(saver: itemList[index]),
                       );
                       if (result == 'edit') {
                         final editResult = await _showEditDialog();
                         if (editResult != null) {
-                          if (editResult is Map && editResult['action'] == 'delete') {
+                          if (editResult is Map &&
+                              editResult['action'] == 'delete') {
                             viewModel.removeSaver(itemList[index]);
-                          } else if (editResult is Map && editResult['action'] == 'update') {
+                          } else if (editResult is Map &&
+                              editResult['action'] == 'update') {
                             final dialogViewModel = editResult['viewModel'];
                             final updatedSaver = Saver(
                               paths: dialogViewModel.getPath(),
@@ -542,7 +611,8 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       } else if (result == 'browse') {
                         String pathToOpen = itemList[index].paths.first;
                         if (itemList[index].paths.length > 1) {
-                          pathToOpen = await _showPathSelector(itemList[index].paths);
+                          pathToOpen =
+                              await _showPathSelector(itemList[index].paths);
                           if (pathToOpen.isEmpty) return;
                         }
                         if (!mounted) return;
@@ -764,19 +834,14 @@ Future<bool> moveXFileToFile(
         final photosStatus = await Permission.photosAddOnly.status;
         if (photosStatus.isGranted) {
           log('Saving to photo gallery...');
-          // ignore: unused_local_variable
-          final galleryResult = await ImageGallerySaver.saveFile(
-            '$userSelectedPath/$savedFileName',
-          );
+          await Gal.putImage('$userSelectedPath/$savedFileName');
           log('Photo saved to gallery');
         } else if (photosStatus == PermissionStatus.denied) {
           // Only request if previously denied (not permanently denied)
           final newStatus = await Permission.photosAddOnly.request();
           if (newStatus.isGranted) {
             log('Saving to photo gallery after permission granted...');
-            await ImageGallerySaver.saveFile(
-              '$userSelectedPath/$savedFileName',
-            );
+            await Gal.putImage('$userSelectedPath/$savedFileName');
             log('Photo saved to gallery');
           } else {
             log('Photo saved to documents only (permission still denied)');
@@ -796,7 +861,8 @@ Future<bool> moveXFileToFile(
         File destinationFile = File('$destinationPath/$sourceFileName');
 
         if (newName != null) {
-          await sourceFile.copy(destinationFile.parent.path + '/$newName$extension');
+          await sourceFile
+              .copy(destinationFile.parent.path + '/$newName$extension');
         } else {
           await sourceFile.copy(destinationFile.path);
         }
@@ -839,14 +905,20 @@ class FocusBoxPainter extends CustomPainter {
     canvas.drawLine(Offset(left, top + cornerLength), Offset(left, top), paint);
     canvas.drawLine(Offset(left, top), Offset(left + cornerLength, top), paint);
     // Top-right
-    canvas.drawLine(Offset(right - cornerLength, top), Offset(right, top), paint);
-    canvas.drawLine(Offset(right, top), Offset(right, top + cornerLength), paint);
+    canvas.drawLine(
+        Offset(right - cornerLength, top), Offset(right, top), paint);
+    canvas.drawLine(
+        Offset(right, top), Offset(right, top + cornerLength), paint);
     // Bottom-left
-    canvas.drawLine(Offset(left, bottom - cornerLength), Offset(left, bottom), paint);
-    canvas.drawLine(Offset(left, bottom), Offset(left + cornerLength, bottom), paint);
+    canvas.drawLine(
+        Offset(left, bottom - cornerLength), Offset(left, bottom), paint);
+    canvas.drawLine(
+        Offset(left, bottom), Offset(left + cornerLength, bottom), paint);
     // Bottom-right
-    canvas.drawLine(Offset(right - cornerLength, bottom), Offset(right, bottom), paint);
-    canvas.drawLine(Offset(right, bottom - cornerLength), Offset(right, bottom), paint);
+    canvas.drawLine(
+        Offset(right - cornerLength, bottom), Offset(right, bottom), paint);
+    canvas.drawLine(
+        Offset(right, bottom - cornerLength), Offset(right, bottom), paint);
   }
 
   @override

@@ -6,24 +6,29 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeViewModel extends ChangeNotifier {
   final List<Saver> _saverList = [];
-  int _resolution = 0;
+  int _resolution =
+      5; // default to max so callers don't accidentally use "low" before prefs load
   int _cameraLensDirection = 0; // 0 = back, 1 = front
+  bool _prefsLoaded = false;
   static const String _resolutionKey = 'resolution';
   static const String _cameraLensKey = 'camera_lens_direction';
 
   HomeViewModel() {
     _initSavers();
-    _loadResolution();
-    _loadCameraLensDirection();
+    _loadPrefs();
   }
 
   List<Saver> get savers => _saverList;
   int get resolution => _resolution;
   int get cameraLensDirection => _cameraLensDirection;
+  bool get prefsLoaded => _prefsLoaded;
 
-  Future<void> _loadResolution() async {
+  Future<void> _loadPrefs() async {
     final prefs = await SharedPreferences.getInstance();
-    _resolution = prefs.getInt(_resolutionKey) ?? 5; // default to max resolution
+    _resolution =
+        prefs.getInt(_resolutionKey) ?? 5; // default to max resolution
+    _cameraLensDirection = prefs.getInt(_cameraLensKey) ?? 0;
+    _prefsLoaded = true;
     notifyListeners();
   }
 
@@ -32,12 +37,6 @@ class HomeViewModel extends ChangeNotifier {
     _resolution = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_resolutionKey, value);
-    notifyListeners();
-  }
-
-  Future<void> _loadCameraLensDirection() async {
-    final prefs = await SharedPreferences.getInstance();
-    _cameraLensDirection = prefs.getInt(_cameraLensKey) ?? 0;
     notifyListeners();
   }
 
