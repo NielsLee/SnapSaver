@@ -14,6 +14,7 @@ import 'package:snap_saver/dialog/file_browser_dialog.dart';
 import 'package:snap_saver/dialog/insert_saver_dialog.dart';
 import 'package:snap_saver/dialog/saver_long_press_dialog.dart';
 import 'package:snap_saver/entity/saver.dart';
+import 'package:snap_saver/service/ios_file_save_service.dart';
 import 'package:snap_saver/l10n/app_localizations.dart';
 import 'package:snap_saver/theme/theme.dart';
 import 'package:snap_saver/viewmodel/home_view_model.dart';
@@ -22,7 +23,9 @@ import 'package:snap_saver/widgets/darkroom_toast.dart';
 import 'package:snap_saver/widgets/saver_button.dart';
 import 'package:vibration/vibration.dart';
 import 'package:path/path.dart' as path;
+import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:image/image.dart' as img;
+import 'package:path_provider/path_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -193,15 +196,14 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _requestStoragePermission() async {
-    PermissionStatus status = await Permission.manageExternalStorage.request();
-
-    if (status.isGranted) {
-      // permission granted
-    } else if (status.isDenied) {
-      // permission denied
-    } else if (status.isPermanentlyDenied) {
-      await openAppSettings();
+    if (Platform.isAndroid) {
+      final status = await Permission.manageExternalStorage.request();
+      if (status.isPermanentlyDenied) {
+        await openAppSettings();
+      }
     }
+    // iOS: We save to App Documents directory which doesn't require storage permission
+    // Photos permission is handled separately in moveXFileToFile
   }
 
   @override
@@ -445,7 +447,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       await handleFileAspectRatio(image);
                       final bool isSaved = await moveXFileToFile(image, paths, prefixedFileName);
                       if (isSaved) {
-                        DarkroomToast.show(AppLocalizations.of(context)!.photoSavedTo(paths.first));
+                        DarkroomToast.show(AppLocalizations.of(context)!.photoSavedTo(basename(paths.first)));
                       }
 
                       saver.count++;
@@ -586,11 +588,16 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   double _slider2Zoom(double sliderValue) {
+    double zoom;
     if (sliderValue >= 0) {
-      return sliderValue;
+      zoom = sliderValue;
     } else {
-      return (1 / sliderValue) + 1;
+      zoom = (1 / sliderValue) + 1;
     }
+    // Clamp to actual camera zoom range to prevent extreme jumps
+    if (zoom < _minZoomLevel) return _minZoomLevel;
+    if (zoom > _maxZoomLevel) return _maxZoomLevel;
+    return zoom;
   }
 
   Future<void> _resetZoomLevel() async {
@@ -606,8 +613,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             _minZoomLevel = 1.0;
             _maxZoomLevel = 1.0;
           } else {
-            _minZoomLevel = min;
-            _maxZoomLevel = max;
+            // Clamp to reasonable bounds (0.5x to 5.0x) to prevent extreme slider range
+            _minZoomLevel = min.clamp(0.5, 1.0);
+            _maxZoomLevel = max.clamp(1.0, 5.0);
           }
           _sliderValue = _zoom2Slider(1.0);
         });
@@ -718,18 +726,83 @@ Future<bool> moveXFileToFile(
   bool isSucceed = true;
 
   try {
-    for (String destinationPath in destinationPaths) {
-      final sourceFileName = basename(sourceFile.path);
-      String extension = path.extension(sourceFileName);
-      File destinationFile = File('$destinationPath/$sourceFileName');
+    if (Platform.isIOS) {
+      // iOS: try user-selected directory first via native channel, fallback to documents directory
+      String? userSelectedPath;
+      String? savedFileName;
+      if (destinationPaths.isNotEmpty) {
+        final sourceFileName = basename(sourceFile.path);
+        String extension = path.extension(sourceFileName);
+        savedFileName = newName != null ? '$newName$extension' : sourceFileName;
 
-      if (newName != null) {
-        await sourceFile.copy(destinationFile.parent.path + '/$newName$extension');
-      } else {
-        await sourceFile.copy(destinationFile.path);
+        final nativeResult = await IosFileSaveService.saveFile(
+          sourcePath: xFile.path,
+          destinationDirectory: destinationPaths.first,
+          fileName: savedFileName,
+        );
+
+        if (nativeResult != null) {
+          userSelectedPath = destinationPaths.first;
+          log('File saved to user-selected iOS path via native: $nativeResult');
+        }
       }
 
-      log('File moved to: ${destinationFile.parent.path + '/$newName$extension'}');
+      if (userSelectedPath == null) {
+        // Fallback to app documents directory
+        final directory = await getApplicationDocumentsDirectory();
+        final sourceFileName = basename(sourceFile.path);
+        String extension = path.extension(sourceFileName);
+        savedFileName = newName != null ? '$newName$extension' : sourceFileName;
+        final savedPath = '${directory.path}/$savedFileName';
+        await sourceFile.copy(savedPath);
+        userSelectedPath = directory.path;
+        log('File saved to iOS documents fallback: $savedPath');
+      }
+
+      // Also save to photo gallery - only if permission is already granted
+      try {
+        final photosStatus = await Permission.photosAddOnly.status;
+        if (photosStatus.isGranted) {
+          log('Saving to photo gallery...');
+          // ignore: unused_local_variable
+          final galleryResult = await ImageGallerySaver.saveFile(
+            '$userSelectedPath/$savedFileName',
+          );
+          log('Photo saved to gallery');
+        } else if (photosStatus == PermissionStatus.denied) {
+          // Only request if previously denied (not permanently denied)
+          final newStatus = await Permission.photosAddOnly.request();
+          if (newStatus.isGranted) {
+            log('Saving to photo gallery after permission granted...');
+            await ImageGallerySaver.saveFile(
+              '$userSelectedPath/$savedFileName',
+            );
+            log('Photo saved to gallery');
+          } else {
+            log('Photo saved to documents only (permission still denied)');
+          }
+        } else {
+          // Permission is permanently denied or restricted, don't prompt
+          log('Photo saved to documents only (photos permission: ${photosStatus.toString()})');
+        }
+      } catch (e) {
+        log('Error saving to gallery: $e');
+      }
+    } else {
+      // Android: direct file system access
+      for (String destinationPath in destinationPaths) {
+        final sourceFileName = basename(sourceFile.path);
+        String extension = path.extension(sourceFileName);
+        File destinationFile = File('$destinationPath/$sourceFileName');
+
+        if (newName != null) {
+          await sourceFile.copy(destinationFile.parent.path + '/$newName$extension');
+        } else {
+          await sourceFile.copy(destinationFile.path);
+        }
+
+        log('File moved to: ${destinationFile.parent.path + '/$newName$extension'}');
+      }
     }
   } catch (e) {
     isSucceed = false;

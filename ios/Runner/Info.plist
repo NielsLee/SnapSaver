@@ -2,14 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>NSCameraUsageDescription</key>
-    <string>Explanation on why the camera access is needed.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-    <string>Explanation on why the NSPhotoLibraryAddUsageDescription access is needed.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>需要访问您的相册以选择照片</string>
-    <key>NSMicrophoneUsageDescription</key>
-    <string>Explanation on why the microphone access is needed.</string>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -32,6 +26,45 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Explanation on why the camera access is needed.</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>NSDocumentsFolderUsageDescription</string>
+	<key>NSFileProtectionCompleteUntilFirstUserAuthentication</key>
+	<string>NSFileProtectionCompleteUntilFirstUserAuthentication</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Explanation on why the microphone access is needed.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Explanation on why the NSPhotoLibraryAddUsageDescription access is needed.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>需要访问您的相册以选择照片</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>FlutterSceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -49,16 +82,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-	<key>UIFileSharingEnabled</key>
-	<true/>
-	<key>NSDocumentsFolderUsageDescription</key>
-	<string>NSDocumentsFolderUsageDescription</string>
-	<key>NSFileProtectionCompleteUntilFirstUserAuthentication</key>
-	<string>NSFileProtectionCompleteUntilFirstUserAuthentication</string>
-
 </dict>
 </plist>

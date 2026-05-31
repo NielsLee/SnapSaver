@@ -23,7 +23,7 @@ class HomeViewModel extends ChangeNotifier {
 
   Future<void> _loadResolution() async {
     final prefs = await SharedPreferences.getInstance();
-    _resolution = prefs.getInt(_resolutionKey) ?? 2; // middle one
+    _resolution = prefs.getInt(_resolutionKey) ?? 5; // default to max resolution
     notifyListeners();
   }
 

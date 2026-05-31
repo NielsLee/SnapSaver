@@ -9,7 +9,7 @@ import 'package:snap_saver/viewmodel/dialog_view_model.dart';
 import 'package:vibration/vibration.dart';
 import 'package:intl/intl.dart';
 
-import '../file/android_native_path_picker.dart';
+import '../file/path_picker.dart';
 
 class InsertSaverDialog extends StatefulWidget {
   final Saver? saver;
@@ -36,6 +36,7 @@ class InsertSaverDialogState extends State<InsertSaverDialog> {
   List<PathSelectorEntity> pathSelectors = [PathSelectorEntity()];
   TextEditingController nameController = TextEditingController();
   TextEditingController prefixController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
 
   bool hasManuallyInputPath = false;
   Color? saverColor;
@@ -237,6 +238,7 @@ class InsertSaverDialogState extends State<InsertSaverDialog> {
         ),
         TextField(
           controller: nameController,
+          focusNode: _focusNode,
           onTap: () {
             hasManuallyInputPath = true;
             if (_nameError) setState(() => _nameError = false);
@@ -357,7 +359,8 @@ class InsertSaverDialogState extends State<InsertSaverDialog> {
         padding: const EdgeInsets.only(bottom: AppSpacing.sm),
         child: InkWell(
           onTap: () {
-            AndroidNativePathPicker().selectPath((path) {
+            _focusNode.unfocus();
+            createPathPicker().selectPath((path) {
               if (path != null) {
                 if (!hasManuallyInputPath) {
                   nameController.text += p.basename(path) + " ";
@@ -419,7 +422,8 @@ class InsertSaverDialogState extends State<InsertSaverDialog> {
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               padding: EdgeInsets.zero,
               onPressed: () {
-                AndroidNativePathPicker().selectPath((path) {
+                _focusNode.unfocus();
+                createPathPicker().selectPath((path) {
                   if (path != null) {
                     setState(() => pathSelector.path = path);
                   }

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:snap_saver/l10n/app_localizations.dart';
 import 'package:snap_saver/theme/theme.dart';
@@ -17,61 +18,91 @@ class FileBrowserDialog extends StatefulWidget {
   State<FileBrowserDialog> createState() => _FileBrowserDialogState();
 }
 
-class _FileBrowserDialogState extends State<FileBrowserDialog> {
-  List<FileSystemEntity> _files = [];
-  String _currentPath = '';
+class _FileBrowserDialogState extends State<FileBrowserDialog> with WidgetsBindingObserver {
+  List<PlatformFile> _files = [];
   bool _isLoading = true;
   String? _error;
+  bool _wasSystemPreviewOpen = false;
 
   @override
   void initState() {
     super.initState();
-    _currentPath = widget.directoryPath;
-    _loadDirectory(widget.directoryPath);
+    WidgetsBinding.instance.addObserver(this);
+    _pickFiles();
   }
 
-  Future<void> _loadDirectory(String path) async {
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // When app resumes and there's no modal covering us, close the dialog
+    if (state == AppLifecycleState.resumed) {
+      // Check if system preview might have closed
+      _checkAndCloseIfNeeded();
+    }
+  }
+
+  void _checkAndCloseIfNeeded() {
+    // If we were loading but now the app has resumed,
+    // it likely means the system picker/preview closed
+    if (mounted && _wasSystemPreviewOpen) {
+      _wasSystemPreviewOpen = false;
+    }
+  }
+
+  Future<void> _pickFiles() async {
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     try {
-      final dir = Directory(path);
-      if (await dir.exists()) {
-        final entities = await dir.list().toList();
-        final filtered = entities.where((e) {
-          final name = e.path.split('/').last;
-          if (name.startsWith('.')) return false;
-          if (e is Directory) return true;
-          final ext = name.toLowerCase();
-          return ext.endsWith('.jpg') ||
-              ext.endsWith('.jpeg') ||
-              ext.endsWith('.png') ||
-              ext.endsWith('.gif') ||
-              ext.endsWith('.webp') ||
-              ext.endsWith('.heic');
+      _wasSystemPreviewOpen = true;
+
+      final result = await FilePicker.pickFiles(
+        initialDirectory: widget.directoryPath,
+        allowMultiple: true,
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'],
+        withReadStream: false,
+      );
+
+      _wasSystemPreviewOpen = false;
+
+      if (result != null && result.files.isNotEmpty) {
+        final filtered = result.files.where((f) {
+          if (f.path == null) return false;
+          final name = f.name.toLowerCase();
+          return name.endsWith('.jpg') ||
+              name.endsWith('.jpeg') ||
+              name.endsWith('.png') ||
+              name.endsWith('.gif') ||
+              name.endsWith('.webp') ||
+              name.endsWith('.heic');
         }).toList();
 
-        filtered.sort((a, b) {
-          final aIsDir = a is Directory;
-          final bIsDir = b is Directory;
-          if (aIsDir != bIsDir) return aIsDir ? -1 : 1;
-          return a.path.toLowerCase().compareTo(b.path.toLowerCase());
-        });
+        filtered.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
         setState(() {
           _files = filtered;
-          _currentPath = path;
           _isLoading = false;
         });
       } else {
         setState(() {
-          _error = 'Directory does not exist';
+          _files = [];
           _isLoading = false;
         });
+        // If user cancelled and we have no files, close the dialog
+        if (mounted) {
+          widget.onClose();
+        }
       }
     } catch (e) {
+      _wasSystemPreviewOpen = false;
       setState(() {
         _error = e.toString();
         _isLoading = false;
@@ -120,7 +151,7 @@ class _FileBrowserDialogState extends State<FileBrowserDialog> {
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
               color: AppColors.surfaceVariant,
               child: Text(
-                _currentPath,
+                _getBasename(widget.directoryPath),
                 style: AppTypography.caption().copyWith(color: AppColors.muted),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
@@ -139,7 +170,7 @@ class _FileBrowserDialogState extends State<FileBrowserDialog> {
                               Text(_error!, textAlign: TextAlign.center, style: AppTypography.body()),
                               const SizedBox(height: AppSpacing.md),
                               ElevatedButton(
-                                onPressed: () => _loadDirectory(_currentPath),
+                                onPressed: _pickFiles,
                                 child: const Text('Retry'),
                               ),
                             ],
@@ -153,8 +184,13 @@ class _FileBrowserDialogState extends State<FileBrowserDialog> {
                                   const Icon(Icons.folder_open, size: 48, color: AppColors.muted),
                                   const SizedBox(height: AppSpacing.md),
                                   Text(
-                                    'Directory is empty',
+                                    'No images found in this directory',
                                     style: AppTypography.body().copyWith(color: AppColors.muted),
+                                  ),
+                                  const SizedBox(height: AppSpacing.md),
+                                  ElevatedButton(
+                                    onPressed: _pickFiles,
+                                    child: Text(l10n.selectPath),
                                   ),
                                 ],
                               ),
@@ -169,8 +205,7 @@ class _FileBrowserDialogState extends State<FileBrowserDialog> {
                               itemCount: _files.length,
                               itemBuilder: (context, index) {
                                 final file = _files[index];
-                                final name = file.path.split('/').last;
-                                final isDir = file is Directory;
+                                final name = file.name;
 
                                 return Container(
                                   decoration: BoxDecoration(
@@ -180,20 +215,13 @@ class _FileBrowserDialogState extends State<FileBrowserDialog> {
                                   child: Column(
                                     children: [
                                       Expanded(
-                                        child: isDir
-                                            ? Center(
-                                                child: Icon(
-                                                  Icons.folder,
-                                                  size: 48,
-                                                  color: AppColors.accent,
-                                                ),
-                                              )
-                                            : ClipRRect(
-                                                borderRadius: const BorderRadius.vertical(
-                                                  top: Radius.circular(AppRadius.sm),
-                                                ),
-                                                child: Image.file(
-                                                  File(file.path),
+                                        child: ClipRRect(
+                                          borderRadius: const BorderRadius.vertical(
+                                            top: Radius.circular(AppRadius.sm),
+                                          ),
+                                          child: file.path != null
+                                              ? Image.file(
+                                                  File(file.path!),
                                                   fit: BoxFit.cover,
                                                   width: double.infinity,
                                                   errorBuilder: (context, error, stackTrace) {
@@ -205,8 +233,15 @@ class _FileBrowserDialogState extends State<FileBrowserDialog> {
                                                       ),
                                                     );
                                                   },
+                                                )
+                                              : const Center(
+                                                  child: Icon(
+                                                    Icons.image,
+                                                    size: 48,
+                                                    color: AppColors.muted,
+                                                  ),
                                                 ),
-                                              ),
+                                        ),
                                       ),
                                       Container(
                                         width: double.infinity,
@@ -236,4 +271,8 @@ class _FileBrowserDialogState extends State<FileBrowserDialog> {
       ),
     );
   }
+}
+
+String _getBasename(String path) {
+  return path.split('/').last;
 }

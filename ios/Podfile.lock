@@ -1,142 +1,92 @@
 PODS:
   - audioplayers_darwin (0.0.1):
     - Flutter
+    - FlutterMacOS
   - camera_avfoundation (0.0.1):
     - Flutter
   - device_info_plus (0.0.1):
     - Flutter
-  - DKImagePickerController/Core (4.3.9):
-    - DKImagePickerController/ImageDataManager
-    - DKImagePickerController/Resource
-  - DKImagePickerController/ImageDataManager (4.3.9)
-  - DKImagePickerController/PhotoGallery (4.3.9):
-    - DKImagePickerController/Core
-    - DKPhotoGallery
-  - DKImagePickerController/Resource (4.3.9)
-  - DKPhotoGallery (0.0.19):
-    - DKPhotoGallery/Core (= 0.0.19)
-    - DKPhotoGallery/Model (= 0.0.19)
-    - DKPhotoGallery/Preview (= 0.0.19)
-    - DKPhotoGallery/Resource (= 0.0.19)
-    - SDWebImage
-    - SwiftyGif
-  - DKPhotoGallery/Core (0.0.19):
-    - DKPhotoGallery/Model
-    - DKPhotoGallery/Preview
-    - SDWebImage
-    - SwiftyGif
-  - DKPhotoGallery/Model (0.0.19):
-    - SDWebImage
-    - SwiftyGif
-  - DKPhotoGallery/Preview (0.0.19):
-    - DKPhotoGallery/Model
-    - DKPhotoGallery/Resource
-    - SDWebImage
-    - SwiftyGif
-  - DKPhotoGallery/Resource (0.0.19):
-    - SDWebImage
-    - SwiftyGif
   - file_picker (0.0.1):
-    - DKImagePickerController/PhotoGallery
     - Flutter
+    - FlutterMacOS
   - Flutter (1.0.0)
   - flutter_localization (0.0.1):
     - Flutter
   - fluttertoast (0.0.2):
     - Flutter
-    - Toast
-  - path_provider_foundation (0.0.1):
+  - image_gallery_saver (2.0.2):
     - Flutter
-    - FlutterMacOS
   - permission_handler_apple (9.3.0):
     - Flutter
-  - SDWebImage (5.21.3):
-    - SDWebImage/Core (= 5.21.3)
-  - SDWebImage/Core (5.21.3)
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
-  - sqflite (0.0.3):
+  - sqflite_darwin (0.0.4):
     - Flutter
     - FlutterMacOS
-  - SwiftyGif (5.4.5)
-  - Toast (4.1.1)
   - url_launcher_ios (0.0.1):
     - Flutter
-  - vibration (1.7.5):
+  - vibration (3.0.0):
     - Flutter
 
 DEPENDENCIES:
-  - audioplayers_darwin (from `.symlinks/plugins/audioplayers_darwin/ios`)
+  - audioplayers_darwin (from `.symlinks/plugins/audioplayers_darwin/darwin`)
   - camera_avfoundation (from `.symlinks/plugins/camera_avfoundation/ios`)
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
-  - file_picker (from `.symlinks/plugins/file_picker/ios`)
+  - file_picker (from `.symlinks/plugins/file_picker/darwin`)
   - Flutter (from `Flutter`)
   - flutter_localization (from `.symlinks/plugins/flutter_localization/ios`)
   - fluttertoast (from `.symlinks/plugins/fluttertoast/ios`)
-  - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
+  - image_gallery_saver (from `.symlinks/plugins/image_gallery_saver/ios`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
-  - sqflite (from `.symlinks/plugins/sqflite/darwin`)
+  - sqflite_darwin (from `.symlinks/plugins/sqflite_darwin/darwin`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
   - vibration (from `.symlinks/plugins/vibration/ios`)
 
-SPEC REPOS:
-  trunk:
-    - DKImagePickerController
-    - DKPhotoGallery
-    - SDWebImage
-    - SwiftyGif
-    - Toast
-
 EXTERNAL SOURCES:
   audioplayers_darwin:
-    :path: ".symlinks/plugins/audioplayers_darwin/ios"
+    :path: ".symlinks/plugins/audioplayers_darwin/darwin"
   camera_avfoundation:
     :path: ".symlinks/plugins/camera_avfoundation/ios"
   device_info_plus:
     :path: ".symlinks/plugins/device_info_plus/ios"
   file_picker:
-    :path: ".symlinks/plugins/file_picker/ios"
+    :path: ".symlinks/plugins/file_picker/darwin"
   Flutter:
     :path: Flutter
   flutter_localization:
     :path: ".symlinks/plugins/flutter_localization/ios"
   fluttertoast:
     :path: ".symlinks/plugins/fluttertoast/ios"
-  path_provider_foundation:
-    :path: ".symlinks/plugins/path_provider_foundation/darwin"
+  image_gallery_saver:
+    :path: ".symlinks/plugins/image_gallery_saver/ios"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
-  sqflite:
-    :path: ".symlinks/plugins/sqflite/darwin"
+  sqflite_darwin:
+    :path: ".symlinks/plugins/sqflite_darwin/darwin"
   url_launcher_ios:
     :path: ".symlinks/plugins/url_launcher_ios/ios"
   vibration:
     :path: ".symlinks/plugins/vibration/ios"
 
 SPEC CHECKSUMS:
-  audioplayers_darwin: 877d9a4d06331c5c374595e46e16453ac7eafa40
-  camera_avfoundation: dd002b0330f4981e1bbcb46ae9b62829237459a4
-  device_info_plus: 97af1d7e84681a90d0693e63169a5d50e0839a0d
-  DKImagePickerController: 946cec48c7873164274ecc4624d19e3da4c1ef3c
-  DKPhotoGallery: b3834fecb755ee09a593d7c9e389d8b5d6deed60
-  file_picker: 09aa5ec1ab24135ccd7a1621c46c84134bfd6655
-  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
-  flutter_localization: f43b18844a2b3d2c71fd64f04ffd6b1e64dd54d4
-  fluttertoast: e9a18c7be5413da53898f660530c56f35edfba9c
-  path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
+  audioplayers_darwin: f15e209a3e856d1a7edcf98dc029f484fead2242
+  camera_avfoundation: 769d252259fa21e39ada7399c9dc9c0921af8165
+  device_info_plus: bf2e3232933866d73fe290f2942f2156cdd10342
+  file_picker: e81e2d2db6261a4e98febeae383bd2173ba8b396
+  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  flutter_localization: 3b341c97420e7cf580e25b63c3a537609d1e2f12
+  fluttertoast: 21eecd6935e7064cc1fcb733a4c5a428f3f24f0f
+  image_gallery_saver: cb43cc43141711190510e92c460eb1655cd343cb
   permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
-  SDWebImage: 16309af6d214ba3f77a7c6f6fdda888cb313a50a
-  shared_preferences_foundation: fcdcbc04712aee1108ac7fda236f363274528f78
-  sqflite: 673a0e54cc04b7d6dba8d24fb8095b31c3a99eec
-  SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
-  Toast: 1f5ea13423a1e6674c4abdac5be53587ae481c4e
-  url_launcher_ios: 5334b05cef931de560670eeae103fd3e431ac3fe
-  vibration: 7d883d141656a1c1a6d8d238616b2042a51a1241
+  shared_preferences_foundation: 5086985c1d43c5ba4d5e69a4e8083a389e2909e6
+  sqflite_darwin: 5a7236e3b501866c1c9befc6771dfd73ffb8702d
+  url_launcher_ios: bb13df5870e8c4234ca12609d04010a21be43dfa
+  vibration: 8e4d81c3e73ab229a9fb5ab2692f789c4a46d74d
 
-PODFILE CHECKSUM: 819463e6a0290f5a72f145ba7cde16e8b6ef0796
+PODFILE CHECKSUM: 1959d098c91d8a792531a723c4a9d7e9f6a01e38
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.16.2
