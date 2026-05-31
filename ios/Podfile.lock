@@ -14,8 +14,9 @@ PODS:
     - Flutter
   - fluttertoast (0.0.2):
     - Flutter
-  - image_gallery_saver (2.0.2):
+  - gal (1.0.0):
     - Flutter
+    - FlutterMacOS
   - permission_handler_apple (9.3.0):
     - Flutter
   - shared_preferences_foundation (0.0.1):
@@ -37,7 +38,7 @@ DEPENDENCIES:
   - Flutter (from `Flutter`)
   - flutter_localization (from `.symlinks/plugins/flutter_localization/ios`)
   - fluttertoast (from `.symlinks/plugins/fluttertoast/ios`)
-  - image_gallery_saver (from `.symlinks/plugins/image_gallery_saver/ios`)
+  - gal (from `.symlinks/plugins/gal/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - sqflite_darwin (from `.symlinks/plugins/sqflite_darwin/darwin`)
@@ -59,8 +60,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/flutter_localization/ios"
   fluttertoast:
     :path: ".symlinks/plugins/fluttertoast/ios"
-  image_gallery_saver:
-    :path: ".symlinks/plugins/image_gallery_saver/ios"
+  gal:
+    :path: ".symlinks/plugins/gal/darwin"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
   shared_preferences_foundation:
@@ -80,7 +81,7 @@ SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_localization: 3b341c97420e7cf580e25b63c3a537609d1e2f12
   fluttertoast: 21eecd6935e7064cc1fcb733a4c5a428f3f24f0f
-  image_gallery_saver: cb43cc43141711190510e92c460eb1655cd343cb
+  gal: 6a522c75909f1244732d4596d11d6a2f86ff37a5
   permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
   shared_preferences_foundation: 5086985c1d43c5ba4d5e69a4e8083a389e2909e6
   sqflite_darwin: 5a7236e3b501866c1c9befc6771dfd73ffb8702d

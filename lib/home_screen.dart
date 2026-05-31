@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -485,8 +484,6 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       setState(() => isCapturing = true);
 
                       await Vibration.vibrate(amplitude: 255, duration: 5);
-                      await AudioPlayer()
-                          .play(AssetSource('sounds/camera_shutter.mp3'));
 
                       try {
                         await _controller!.setFlashMode(currentFlashMode);
